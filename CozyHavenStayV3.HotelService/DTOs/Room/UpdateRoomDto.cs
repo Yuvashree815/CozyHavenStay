@@ -1,0 +1,12 @@
+﻿using CozyHavenStayV3.HotelService.Models;
+
+namespace CozyHavenStayV3.HotelService.DTOs.Room
+{
+    public class UpdateRoomDto
+    {
+        public string RoomSize { get; set; } = string.Empty;
+        public BedType BedType { get; set; }
+        public bool IsAC { get; set; }
+        public decimal BaseFare { get; set; }
+    }
+}

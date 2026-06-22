@@ -1,0 +1,6 @@
+@CozyHavenStayV3.ReviewService_HostAddress = http://localhost:5001
+
+GET {{CozyHavenStayV3.ReviewService_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
