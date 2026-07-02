@@ -13,7 +13,7 @@
 
         public PaymentStatus Status { get; set; } = PaymentStatus.Pending;
 
-        
+        public decimal? RefundAmount { get; set; }
         public string TransactionReference { get; set; } = string.Empty;
 
         public DateTime TransactionDate { get; set; } = DateTime.UtcNow;

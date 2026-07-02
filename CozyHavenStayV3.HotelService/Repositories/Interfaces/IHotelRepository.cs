@@ -7,6 +7,7 @@ namespace CozyHavenStayV3.HotelService.Repositories.Interfaces
         Task<Hotel?> GetByIdAsync(int id);
         Task<Hotel?> GetByIdWithRoomsAsync(int id);
         Task<List<Hotel>> SearchByLocationAsync(string location, int pageNumber, int pageSize);
+        Task<bool> ExistsByNameAndLocationAsync(string name, string location, int ownerId);
         Task<int> CountByLocationAsync(string location);
         Task<List<Hotel>> GetByOwnerIdAsync(int ownerId);
         Task<List<Hotel>> GetAllAsync(int pageNumber, int pageSize);

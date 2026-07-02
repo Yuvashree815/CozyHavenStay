@@ -1,4 +1,7 @@
 <Solution>
+  <Folder Name="/Solution Items/">
+    <File Path="README.md" />
+  </Folder>
   <Project Path="CozyHavenStayV3.BookingService.Tests/CozyHavenStayV3.BookingService.Tests.csproj" Id="fb0aca81-48b7-4d50-9c91-534c840d00a5" />
   <Project Path="CozyHavenStayV3.BookingService/CozyHavenStayV3.BookingService.csproj" Id="6316a71b-2cbb-4d98-beeb-8911b6dc27a5" />
   <Project Path="CozyHavenStayV3.Gateway/CozyHavenStayV3.Gateway.csproj" Id="ff0d7775-3875-4a60-b77d-10f81b10d35c" />

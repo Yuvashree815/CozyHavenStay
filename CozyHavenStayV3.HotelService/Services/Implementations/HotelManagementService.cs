@@ -22,13 +22,24 @@ namespace CozyHavenStayV3.HotelService.Services.Implementations
 
         public async Task<HotelDto> CreateHotelAsync(int ownerId, CreateHotelDto dto)
         {
+            // Duplicate check — same owner can't have two active hotels
+            // with identical name AND location
+            var isDuplicate = await _hotelRepository.ExistsByNameAndLocationAsync(
+                dto.Name, dto.Location, ownerId);
+
+            if (isDuplicate)
+            {
+                throw new InvalidOperationException(
+                    "You already have an active hotel with this name and location.");
+            }
+
             var hotel = _mapper.Map<Hotel>(dto);
             hotel.OwnerId = ownerId;
             hotel.CreatedAt = DateTime.UtcNow;
             hotel.IsActive = true;
 
             await _hotelRepository.AddAsync(hotel);
-            Log.Info($"Hotel '{dto.Name}' created by owner {ownerId} (Id: {hotel.Id}).");
+            Log.Info($"Hotel '{hotel.Name}' created by owner {ownerId} (Id: {hotel.Id}).");
 
             return _mapper.Map<HotelDto>(hotel);
         }

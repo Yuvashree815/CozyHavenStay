@@ -114,6 +114,59 @@ namespace CozyHavenStayV3.HotelService.Tests
         }
 
         [Test]
+        public void CreateHotelAsync_DuplicateNameAndLocation_ThrowsInvalidOperationException()
+        {
+            // Arrange
+            _hotelRepositoryMock
+                .Setup(r => r.ExistsByNameAndLocationAsync(
+                    "Cozy Haven Chennai", "Chennai", 5))
+                .ReturnsAsync(true);
+
+            var dto = new CreateHotelDto
+            {
+                Name = "Cozy Haven Chennai",
+                Location = "Chennai",
+                Description = "Duplicate attempt"
+            };
+
+            // Act + Assert
+            var ex = Assert.ThrowsAsync<InvalidOperationException>(async () =>
+                await _hotelService.CreateHotelAsync(ownerId: 5, dto));
+
+            Assert.That(ex!.Message, Is.EqualTo(
+                "You already have an active hotel with this name and location."));
+
+            
+            _hotelRepositoryMock.Verify(r => r.AddAsync(
+                It.IsAny<Hotel>()), Times.Never);
+        }
+
+        [Test]
+        public async Task CreateHotelAsync_NoDuplicate_CreatesSuccessfully()
+        {
+            // Arrange
+            _hotelRepositoryMock
+                .Setup(r => r.ExistsByNameAndLocationAsync(
+                    It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>()))
+                .ReturnsAsync(false);
+
+            var dto = new CreateHotelDto
+            {
+                Name = "Brand New Hotel",
+                Location = "Mumbai",
+                Description = "Fresh listing"
+            };
+
+            // Act 
+            Assert.DoesNotThrowAsync(async () =>
+                await _hotelService.CreateHotelAsync(ownerId: 5, dto));
+
+            
+            _hotelRepositoryMock.Verify(r => r.AddAsync(
+                It.IsAny<Hotel>()), Times.Once);
+        }
+
+        [Test]
         public async Task IsOwnedByAsync_CorrectOwner_ReturnsTrue()
         {
             var hotel = new Hotel { Id = 1, OwnerId = 5, Name = "Test", Location = "Test" };

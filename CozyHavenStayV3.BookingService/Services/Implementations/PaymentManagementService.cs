@@ -34,11 +34,12 @@ namespace CozyHavenStayV3.BookingService.Services.Implementations
             return payment;
         }
 
-        public async Task MarkRefundPendingAsync(Payment payment)
+        public async Task MarkRefundPendingAsync(Payment payment, decimal refundAmount)
         {
             payment.Status = PaymentStatus.RefundPending;
+            payment.RefundAmount = refundAmount;
             await _paymentRepository.UpdateAsync(payment);
-            Log.Info($"Payment {payment.Id} marked RefundPending for booking {payment.BookingId}.");
+            Log.Info($"Payment {payment.Id} marked as RefundPending. Refund amount: {refundAmount}");
         }
 
         public async Task<Payment> ApproveRefundAsync(int bookingId)

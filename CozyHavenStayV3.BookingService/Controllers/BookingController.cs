@@ -32,6 +32,15 @@ namespace CozyHavenStayV3.BookingService.Controllers
             return StatusCode(StatusCodes.Status201Created, booking);
         }
 
+        [HttpGet("{id}/refund-policy")]
+        [Authorize]
+        public async Task<ActionResult<RefundPolicyDto>> GetRefundPolicy(int id)
+        {
+            var userId = GetCurrentUserId();
+            var policy = await _bookingService.GetRefundPolicyAsync(id, userId);
+            return Ok(policy);
+        }
+
         [HttpGet("{id}")]
         [Authorize(Roles = RoleNames.User)]
         public async Task<ActionResult<BookingDto>> GetById(int id)

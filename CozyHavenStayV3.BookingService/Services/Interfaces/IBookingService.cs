@@ -12,6 +12,7 @@ namespace CozyHavenStayV3.BookingService.Services.Interfaces
         Task<BookingDto> CancelBookingAsync(int bookingId, int userId);
         Task<List<BookingDto>> GetByHotelIdAsync(int hotelId, int ownerId);
         Task<List<BookingDto>> GetPendingRefundsAsync(int ownerId);
+        Task<RefundPolicyDto> GetRefundPolicyAsync(int bookingId, int userId);
         Task<BookingDto> ApproveRefundAsync(int bookingId, int ownerId);
     }
 }

@@ -8,6 +8,8 @@ namespace CozyHavenStayV3.BookingService.DTOs
         public decimal Amount { get; set; }
         public PaymentMethod Method { get; set; }
         public PaymentStatus Status { get; set; }
+
+        public decimal? RefundAmount { get; set; }
         public string TransactionReference { get; set; } = string.Empty;
         public DateTime TransactionDate { get; set; }
         public DateTime? RefundedAt { get; set; }

@@ -85,15 +85,17 @@ namespace CozyHavenStayV3.BookingService.Services.Implementations
             }
             catch (Exception ex)
             {
-                
                 Log.Error($"Room blocking failed for booking {booking.Id} after payment. Marking booking as Cancelled.", ex);
                 booking.Status = BookingStatus.Cancelled;
                 await _bookingRepository.UpdateAsync(booking);
-                await _paymentService.MarkRefundPendingAsync(payment);
+
+                // Full refund for saga rollback — this is our fault, not the guest's
+                await _paymentService.MarkRefundPendingAsync(payment, payment.Amount);
+
                 throw new InvalidOperationException("Unable to confirm your room. Your payment will be refunded.");
             }
 
-            
+
             booking.Status = BookingStatus.Confirmed;
             await _bookingRepository.UpdateAsync(booking);
             Log.Info($"Booking {booking.Id} confirmed for user {userId}.");
@@ -144,15 +146,16 @@ namespace CozyHavenStayV3.BookingService.Services.Implementations
                 throw new InvalidOperationException("This booking is already cancelled.");
             }
 
+            // Calculate refund based on cancellation timing
+            var refundAmount = CalculateRefundAmount(booking);
+
             booking.Status = BookingStatus.Cancelled;
             await _bookingRepository.UpdateAsync(booking);
 
-            await _paymentService.MarkRefundPendingAsync(booking.Payment);
-
-           
+            await _paymentService.MarkRefundPendingAsync(booking.Payment, refundAmount);
             await _hotelServiceClient.ReleaseBookingBlockAsync(booking.RoomId, booking.Id);
 
-            Log.Info($"Booking {bookingId} cancelled by user {userId}. Refund pending.");
+            Log.Info($"Booking {bookingId} cancelled by user {userId}. Refund amount: {refundAmount} of {booking.TotalFare}.");
 
             return _mapper.Map<BookingDto>(booking);
         }
@@ -175,6 +178,7 @@ namespace CozyHavenStayV3.BookingService.Services.Implementations
             if (booking is null) return false;
             if (booking.UserId != userId) return false;
             if (booking.HotelId != hotelId) return false;
+            if (booking.CheckOut > DateTime.UtcNow) return false;
             if (booking.Status != BookingStatus.Confirmed) return false;
 
             return true;
@@ -208,5 +212,81 @@ namespace CozyHavenStayV3.BookingService.Services.Implementations
 
             return _mapper.Map<BookingDto>(updatedBooking);
         }
+        public async Task<RefundPolicyDto> GetRefundPolicyAsync(int bookingId, int userId)
+        {
+            var booking = await _bookingRepository.GetByIdWithDetailsAsync(bookingId)
+                ?? throw new KeyNotFoundException("Booking not found.");
+
+            if (booking.UserId != userId)
+            {
+                throw new UnauthorizedAccessException(
+                    "You do not have permission to view this booking's refund policy.");
+            }
+
+            if (booking.Status == BookingStatus.Cancelled)
+            {
+                throw new InvalidOperationException(
+                    "This booking is already cancelled.");
+            }
+
+            var hoursUntilCheckIn = (booking.CheckIn - DateTime.UtcNow).TotalHours;
+            var refundAmount = CalculateRefundAmount(booking);
+
+            // Calculate percentage and policy message based on same tiers
+            // as CalculateRefundAmount — keeping them in sync
+            int refundPercentage;
+            string policy;
+
+            if (hoursUntilCheckIn > 48)
+            {
+                refundPercentage = 100;
+                policy = "Free cancellation — full refund available more than 48 hours before check-in.";
+            }
+            else if (hoursUntilCheckIn > 24)
+            {
+                refundPercentage = 50;
+                policy = "Partial cancellation — 50% refund available between 24 and 48 hours before check-in.";
+            }
+            else if (hoursUntilCheckIn > 0)
+            {
+                refundPercentage = 0;
+                policy = "No refund available within 24 hours of check-in.";
+            }
+            else
+            {
+                refundPercentage = 0;
+                policy = "No refund available — check-in date has already passed.";
+            }
+
+            return new RefundPolicyDto
+            {
+                BookingId = bookingId,
+                TotalFare = booking.TotalFare,
+                HoursUntilCheckIn = Math.Round(hoursUntilCheckIn, 1),
+                RefundAmount = refundAmount,
+                RefundPercentage = refundPercentage,
+                Policy = policy
+            };
+        }
+        private static decimal CalculateRefundAmount(Booking booking)
+        {
+            var hoursUntilCheckIn = (booking.CheckIn - DateTime.UtcNow).TotalHours;
+
+            if (hoursUntilCheckIn > 48)
+            {
+                return booking.TotalFare;
+            }
+            else if (hoursUntilCheckIn > 24)
+            {
+                return Math.Round(booking.TotalFare * 0.5m, 2);
+            }
+            else
+            {
+                return 0m;
+            }
+        }
+
+
     }
+
 }

@@ -5,7 +5,7 @@ namespace CozyHavenStayV3.BookingService.Services.Interfaces
     public interface IPaymentService
     {
         Task<Payment> ProcessPaymentAsync(int bookingId, decimal amount, PaymentMethod method);
-        Task MarkRefundPendingAsync(Payment payment);
+        Task MarkRefundPendingAsync(Payment payment, decimal refundAmount);
         Task<Payment> ApproveRefundAsync(int bookingId);
     }
 }

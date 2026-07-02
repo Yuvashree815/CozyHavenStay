@@ -36,6 +36,15 @@ namespace CozyHavenStayV3.HotelService.Repositories.Implementations
                 .ToListAsync();
         }
 
+        public async Task<bool> ExistsByNameAndLocationAsync(string name, string location, int ownerId)
+        {
+            return await _context.Hotels.AnyAsync(h =>
+                h.OwnerId == ownerId &&
+                h.Name.ToLower() == name.ToLower() &&
+                h.Location.ToLower() == location.ToLower() &&
+                h.IsActive);
+        }
+
         public async Task<int> CountByLocationAsync(string location)
         {
             return await _context.Hotels

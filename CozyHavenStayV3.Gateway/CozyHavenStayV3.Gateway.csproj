@@ -10,4 +10,10 @@
     <PackageReference Include="Ocelot" Version="24.1.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Content Update="appsettings.example.json">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
 </Project>
