@@ -120,6 +120,18 @@ namespace CozyHavenStayV3.ReviewService.Tests
         }
 
         [Test]
+        public async Task GetRatingSummaryAsync_HotelWithReviews_ReturnsCorrectAverageAndCount()
+        {
+            _reviewRepositoryMock.Setup(r => r.GetAverageRatingAsync(1)).ReturnsAsync(4.7);
+            _reviewRepositoryMock.Setup(r => r.CountByHotelIdAsync(1)).ReturnsAsync(15);
+
+            var result = await _reviewService.GetRatingSummaryAsync(1);
+
+            Assert.That(result.AverageRating, Is.EqualTo(4.7));
+            Assert.That(result.TotalReviews, Is.EqualTo(15));
+        }
+
+        [Test]
         public async Task GetRatingSummaryAsync_MultipleReviews_RoundsAverageToOneDecimalPlace()
         {
             // Arrange

@@ -454,5 +454,55 @@ namespace CozyHavenStayV3.BookingService.Tests
 
             _paymentServiceMock.Verify(p => p.ApproveRefundAsync(It.IsAny<int>()), Times.Never);
         }
+
+        [Test]
+        public async Task VerifyCompletedStayAsync_CheckOutInFuture_ReturnsFalse()
+        {
+            // Booking is Confirmed but checkout hasn't happened yet
+            var booking = new Booking
+            {
+                Id = 1,
+                UserId = 5,
+                HotelId = 1,
+                RoomId = 1,
+                CheckIn = DateTime.UtcNow.AddDays(-3),
+                CheckOut = DateTime.UtcNow.AddDays(1), // still in the future
+                Status = BookingStatus.Confirmed
+            };
+
+            _bookingRepositoryMock
+                .Setup(r => r.GetByIdAsync(1))
+                .ReturnsAsync(booking);
+
+            var result = await _bookingService.VerifyCompletedStayAsync(1, userId: 5, hotelId: 1);
+
+            // Should return false — guest hasn't checked out yet
+            Assert.That(result, Is.False);
+        }
+
+        [Test]
+        public async Task VerifyCompletedStayAsync_CheckOutInPast_ReturnsTrue()
+        {
+            // Booking is Confirmed and checkout has already passed
+            var booking = new Booking
+            {
+                Id = 1,
+                UserId = 5,
+                HotelId = 1,
+                RoomId = 1,
+                CheckIn = DateTime.UtcNow.AddDays(-5),
+                CheckOut = DateTime.UtcNow.AddDays(-1), // yesterday — stay is complete
+                Status = BookingStatus.Confirmed
+            };
+
+            _bookingRepositoryMock
+                .Setup(r => r.GetByIdAsync(1))
+                .ReturnsAsync(booking);
+
+            var result = await _bookingService.VerifyCompletedStayAsync(1, userId: 5, hotelId: 1);
+
+            // Should return true — stay is genuinely complete
+            Assert.That(result, Is.True);
+        }
     }
 }

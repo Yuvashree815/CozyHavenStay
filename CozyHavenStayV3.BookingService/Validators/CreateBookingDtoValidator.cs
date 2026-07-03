@@ -17,12 +17,10 @@ namespace CozyHavenStayV3.BookingService.Validators
 
             RuleFor(x => x.CheckOut)
                                    .NotEmpty().WithMessage("Check-out date is required.")
-                                   .GreaterThan(x => x.CheckIn)
-                                   .WithMessage("Check-out date must be after check-in date (minimum 1 night).");
-
-
-            RuleFor(x => x.CheckOut)
-                .LessThanOrEqualTo(x => x.CheckIn.AddDays(30)).WithMessage("Maximum stay duration is 30 nights.");
+                                   .Must((dto, checkOut) => checkOut.Date > dto.CheckIn.Date)
+                                   .WithMessage("Check-out date must be after check-in date (minimum 1 night).")
+                                   .Must((dto, checkOut) => (checkOut.Date - dto.CheckIn.Date).Days <= 30)
+                                   .WithMessage("Maximum stay duration is 30 nights.");
 
             RuleFor(x => x.NumberOfAdults)
                 .GreaterThanOrEqualTo(1).WithMessage("At least one adult is required.");
