@@ -1,36 +1,5 @@
-# Build outputs
-bin/
-obj/
-
-# Visual Studio files
+# Visual Studio local files
 .vs/
-*.user
-*.suo
-*.userosscache
-*.sln.docobj
-
-# NuGet packages
-packages/
-*.nupkg
-project.lock.json
-
-# Logs (generated at runtime, not source code)
-Logs/
-*.log
-
-# ==========================================
-# SECURITY: Sensitive configuration files
-# ==========================================
-**/appsettings.json
-**/appsettings.Development.json
-**/appsettings.Production.json
-**/appsettings.Staging.json
-
-# Explicitly ALLOW example files (safe to commit)
-!**/appsettings.example.json
-
-# Migrations are auto-generated but safe to include
-# (keeping them so the database can be recreated from scratch)
 
 # OS files
 .DS_Store
