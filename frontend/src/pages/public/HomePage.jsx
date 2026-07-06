@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { isSimpleSearch, parseSearchQuery, buildSearchUrl } from '../../utils/searchParser';
 
 const features = [
   {
     icon: '🔍',
     title: 'Smart Search',
-    desc: 'Find the perfect hotel by location, amenities, and availability in seconds.'
+    desc: 'Search naturally — "hotel in Chennai with pool" and we find exactly what you need.'
   },
   {
     icon: '💳',
@@ -34,15 +35,34 @@ const cities = [
 ];
 
 const HomePage = () => {
-  const [location, setLocation] = useState('');
+  const [query, setQuery] = useState('');
   const navigate = useNavigate();
 
   const handleSearch = (e) => {
     e.preventDefault();
-    if (location.trim()) {
-      navigate(`/search?location=${encodeURIComponent(location.trim())}`);
+    if (!query.trim()) return;
+
+    const trimmed = query.trim();
+
+    if (isSimpleSearch(trimmed)) {
+      // Simple — direct location search
+      navigate(`/search?location=${encodeURIComponent(trimmed)}`);
+    } else {
+      // Natural language — keyword parse
+      const parsed = parseSearchQuery(trimmed);
+      const queryString = buildSearchUrl(parsed);
+      navigate(`/search?${queryString}&originalQuery=${encodeURIComponent(trimmed)}`);
     }
   };
+
+  const getSearchHint = () => {
+    if (!query.trim()) return null;
+    return isSimpleSearch(query.trim())
+      ? { icon: '⚡', text: 'Quick search by location', color: 'rgba(255,255,255,0.6)' }
+      : { icon: '🔍', text: 'Smart search — detecting location & amenities', color: 'var(--accent)' };
+  };
+
+  const hint = getSearchHint();
 
   return (
     <div>
@@ -52,21 +72,18 @@ const HomePage = () => {
           <div className="row justify-content-center text-center">
             <div className="col-lg-8">
               <p style={{
-                color: 'var(--accent)',
-                fontWeight: 600,
-                letterSpacing: '2px',
-                fontSize: '0.85rem',
-                textTransform: 'uppercase',
-                marginBottom: '1rem'
+                color: 'var(--accent)', fontWeight: 600,
+                letterSpacing: '2px', fontSize: '0.85rem',
+                textTransform: 'uppercase', marginBottom: '1rem'
               }}>
-                ✦ Premium Hotel Booking
+                ✦ Smart Hotel Booking
               </p>
               <h1 className="hero-title">
                 Find Your Perfect <span>Stay</span>
               </h1>
               <p className="hero-subtitle">
-                Discover handpicked hotels across India — from cozy boutique stays
-                to luxury resorts. Book with confidence.
+                Search by city or describe what you need —
+                "hotel in Chennai with pool and wifi"
               </p>
 
               {/* Search box */}
@@ -75,9 +92,9 @@ const HomePage = () => {
                   <input
                     type="text"
                     className="form-control hero-search-input"
-                    placeholder="Where do you want to stay? (e.g. Chennai, Mumbai...)"
-                    value={location}
-                    onChange={(e) => setLocation(e.target.value)}
+                    placeholder='Try "Chennai" or "hotel in Mumbai with pool"'
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
                     required
                   />
                   <button type="submit" className="hero-search-btn">
@@ -85,6 +102,16 @@ const HomePage = () => {
                   </button>
                 </div>
               </form>
+
+              {/* Live search hint */}
+              {hint && (
+                <div style={{
+                  marginTop: '0.75rem', fontSize: '0.8rem',
+                  color: hint.color, transition: 'all 0.2s ease'
+                }}>
+                  {hint.icon} {hint.text}
+                </div>
+              )}
 
               {/* Quick stats */}
               <div className="d-flex justify-content-center gap-4 mt-4">
@@ -95,8 +122,7 @@ const HomePage = () => {
                 ].map(({ num, label }) => (
                   <div key={label} className="text-center">
                     <div style={{
-                      fontSize: '1.4rem',
-                      fontWeight: 700,
+                      fontSize: '1.4rem', fontWeight: 700,
                       color: 'var(--accent)',
                       fontFamily: 'Playfair Display, serif'
                     }}>
@@ -143,8 +169,7 @@ const HomePage = () => {
                 <div className="feature-title">{title}</div>
                 <p style={{
                   color: 'var(--text-secondary)',
-                  fontSize: '0.875rem',
-                  margin: 0
+                  fontSize: '0.875rem', margin: 0
                 }}>
                   {desc}
                 </p>
@@ -157,11 +182,8 @@ const HomePage = () => {
       {/* Trust banner */}
       <div style={{
         background: 'linear-gradient(135deg, var(--primary), var(--primary-light))',
-        borderRadius: 'var(--radius-lg)',
-        padding: '2.5rem',
-        textAlign: 'center',
-        color: 'white',
-        marginBottom: '2rem'
+        borderRadius: 'var(--radius-lg)', padding: '2.5rem',
+        textAlign: 'center', color: 'white', marginBottom: '2rem'
       }}>
         <h3 style={{ color: 'white', marginBottom: '0.5rem' }}>
           Ready to find your perfect stay?

@@ -64,6 +64,27 @@ namespace CozyHavenStayV3.HotelService.Controllers
             return Ok(hotel);
         }
 
+        [HttpGet("filter")]
+        [AllowAnonymous]
+        public async Task<IActionResult> FilterHotels(
+        [FromQuery] string? location,
+        [FromQuery] bool? hasFreeWifi,
+        [FromQuery] bool? hasDining,
+        [FromQuery] bool? hasParking,
+        [FromQuery] bool? hasSwimmingPool,
+        [FromQuery] bool? hasFitnessCenter,
+        [FromQuery] bool? hasRoomService,
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 10)
+        {
+            var result = await _hotelService.FilterHotelsAsync(
+                location, hasFreeWifi, hasDining, hasParking,
+                hasSwimmingPool, hasFitnessCenter, hasRoomService,
+                pageNumber, pageSize);
+
+            return Ok(result);
+        }
+
         [HttpGet("my-hotels")]
         [Authorize(Roles = RoleNames.HotelOwner)]
         public async Task<ActionResult<List<HotelDto>>> GetMyHotels()

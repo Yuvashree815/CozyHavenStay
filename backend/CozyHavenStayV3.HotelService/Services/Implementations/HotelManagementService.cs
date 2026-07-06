@@ -131,5 +131,32 @@ namespace CozyHavenStayV3.HotelService.Services.Implementations
             await _hotelRepository.UpdateAsync(hotel);
             Log.Info($"Hotel {hotelId} deactivated.");
         }
+
+        public async Task<PagedResult<HotelSummaryDto>> FilterHotelsAsync(
+        string? location,
+        bool? hasFreeWifi,
+        bool? hasDining,
+        bool? hasParking,
+        bool? hasSwimmingPool,
+        bool? hasFitnessCenter,
+        bool? hasRoomService,
+        int pageNumber,
+        int pageSize)
+        {
+            pageSize = Math.Min(pageSize, 100);
+
+            var result = await _hotelRepository.FilterHotelsAsync(
+                location, hasFreeWifi, hasDining, hasParking,
+                hasSwimmingPool, hasFitnessCenter, hasRoomService,
+                pageNumber, pageSize);
+
+            return new PagedResult<HotelSummaryDto>
+            {
+                Items = _mapper.Map<List<HotelSummaryDto>>(result.Items),
+                TotalCount = result.TotalCount,
+                PageNumber = result.PageNumber,
+                PageSize = result.PageSize
+            };
+        }
     }
 }

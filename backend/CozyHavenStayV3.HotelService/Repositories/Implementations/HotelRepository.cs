@@ -1,7 +1,8 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using CozyHavenStayV3.HotelService.Common;
 using CozyHavenStayV3.HotelService.Data;
 using CozyHavenStayV3.HotelService.Models;
 using CozyHavenStayV3.HotelService.Repositories.Interfaces;
+using Microsoft.EntityFrameworkCore;
 
 namespace CozyHavenStayV3.HotelService.Repositories.Implementations
 {
@@ -84,6 +85,60 @@ namespace CozyHavenStayV3.HotelService.Repositories.Implementations
         {
             _context.Hotels.Update(hotel);
             await _context.SaveChangesAsync();
+        }
+
+        public async Task<PagedResult<Hotel>> FilterHotelsAsync(
+    string? location,
+    bool? hasFreeWifi,
+    bool? hasDining,
+    bool? hasParking,
+    bool? hasSwimmingPool,
+    bool? hasFitnessCenter,
+    bool? hasRoomService,
+    int pageNumber,
+    int pageSize)
+        {
+            var query = _context.Hotels
+                .Where(h => h.IsActive)
+                .AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(location))
+                query = query.Where(h =>
+                    h.Location.Contains(location) ||
+                    h.Name.Contains(location));
+
+            if (hasFreeWifi == true)
+                query = query.Where(h => h.HasFreeWifi);
+
+            if (hasDining == true)
+                query = query.Where(h => h.HasDining);
+
+            if (hasParking == true)
+                query = query.Where(h => h.HasParking);
+
+            if (hasSwimmingPool == true)
+                query = query.Where(h => h.HasSwimmingPool);
+
+            if (hasFitnessCenter == true)
+                query = query.Where(h => h.HasFitnessCenter);
+
+            if (hasRoomService == true)
+                query = query.Where(h => h.HasRoomService);
+
+            var totalCount = await query.CountAsync();
+            var items = await query
+                .OrderBy(h => h.Name)
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            return new PagedResult<Hotel>
+            {
+                Items = items,
+                TotalCount = totalCount,
+                PageNumber = pageNumber,
+                PageSize = pageSize
+            };
         }
     }
 }

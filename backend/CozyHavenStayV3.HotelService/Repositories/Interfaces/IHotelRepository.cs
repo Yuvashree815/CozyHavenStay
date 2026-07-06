@@ -1,4 +1,5 @@
-﻿using CozyHavenStayV3.HotelService.Models;
+﻿using CozyHavenStayV3.HotelService.Common;
+using CozyHavenStayV3.HotelService.Models;
 
 namespace CozyHavenStayV3.HotelService.Repositories.Interfaces
 {
@@ -14,5 +15,16 @@ namespace CozyHavenStayV3.HotelService.Repositories.Interfaces
         Task<int> GetTotalCountAsync();
         Task AddAsync(Hotel hotel);
         Task UpdateAsync(Hotel hotel);
+        Task<PagedResult<Hotel>> FilterHotelsAsync(
+                                    string? location,
+                                    bool? hasFreeWifi,
+                                    bool? hasDining,
+                                    bool? hasParking,
+                                    bool? hasSwimmingPool,
+                                    bool? hasFitnessCenter,
+                                    bool? hasRoomService,
+                                    int pageNumber,
+                                    int pageSize);
+
     }
 }

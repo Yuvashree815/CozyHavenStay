@@ -14,5 +14,15 @@ namespace CozyHavenStayV3.HotelService.Services.Interfaces
         Task<List<HotelDto>> GetMyHotelsAsync(int ownerId);
         Task<PagedResult<HotelDto>> GetAllForAdminAsync(int pageNumber, int pageSize);
         Task DeactivateHotelAsync(int hotelId);
+        Task<PagedResult<HotelSummaryDto>> FilterHotelsAsync(
+                                            string? location,
+                                            bool? hasFreeWifi,
+                                            bool? hasDining,
+                                            bool? hasParking,
+                                            bool? hasSwimmingPool,
+                                            bool? hasFitnessCenter,
+                                            bool? hasRoomService,
+                                            int pageNumber,
+                                            int pageSize);
     }
 }

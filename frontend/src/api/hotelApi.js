@@ -42,3 +42,16 @@ export const deleteRoomApi = (id) =>
 export const calculateFareApi = (roomId, data) =>
   axiosInstance.post(`/hotel/api/v1/rooms/${roomId}/calculate-fare`, data);
 
+export const filterHotelsApi = (params) => {
+  const query = new URLSearchParams();
+  if (params.location) query.append('location', params.location);
+  if (params.hasFreeWifi) query.append('hasFreeWifi', true);
+  if (params.hasDining) query.append('hasDining', true);
+  if (params.hasParking) query.append('hasParking', true);
+  if (params.hasSwimmingPool) query.append('hasSwimmingPool', true);
+  if (params.hasFitnessCenter) query.append('hasFitnessCenter', true);
+  if (params.hasRoomService) query.append('hasRoomService', true);
+  if (params.pageNumber) query.append('pageNumber', params.pageNumber);
+  if (params.pageSize) query.append('pageSize', params.pageSize);
+  return axiosInstance.get(`/hotel/api/v1/hotels/filter?${query.toString()}`);
+};
