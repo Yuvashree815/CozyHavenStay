@@ -211,5 +211,3 @@ The Axios instance (`src/api/axiosInstance.js`) automatically:
 - Hotel and room images are not supported — placeholder emoji used
 - No real payment gateway — payments are simulated and always succeed
 - Smart search covers 30 Indian cities — international cities fall back to direct text match
-- No real-time notifications
-- Support ticket system not implemented
