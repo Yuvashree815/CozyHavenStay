@@ -12,9 +12,7 @@ const MyBookingsPage = () => {
   const [totalPages, setTotalPages] = useState(1);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    fetchBookings();
-  }, [pageNumber]);
+  useEffect(() => { fetchBookings(); }, [pageNumber]);
 
   const fetchBookings = async () => {
     setLoading(true);
@@ -24,10 +22,8 @@ const MyBookingsPage = () => {
       setBookings(items);
       setTotalPages(response.data.totalPages);
 
-      // Fetch hotel names for all unique hotel IDs in this page
       const uniqueHotelIds = [...new Set(items.map(b => b.hotelId))];
       const hotelNameMap = {};
-
       await Promise.all(
         uniqueHotelIds.map(async (hotelId) => {
           try {
@@ -38,122 +34,195 @@ const MyBookingsPage = () => {
           }
         })
       );
-
       setHotelNames(hotelNameMap);
-    } catch (err) {
+    } catch {
       setError('Failed to load bookings.');
     } finally {
       setLoading(false);
     }
   };
 
-  const getStatusBadge = (status) => {
+  const getStatusClass = (status) => {
     const map = {
-      Confirmed: 'bg-success',
-      Pending: 'bg-warning text-dark',
-      Cancelled: 'bg-danger',
+      Confirmed: 'badge-confirmed',
+      Pending: 'badge-pending',
+      Cancelled: 'badge-cancelled',
     };
-    return map[status] || 'bg-secondary';
+    return map[status] || 'badge-pending';
   };
 
-  const getPaymentBadge = (status) => {
+  const getPaymentClass = (status) => {
     const map = {
-      Completed: 'bg-success',
-      RefundPending: 'bg-warning text-dark',
-      Refunded: 'bg-info',
-      Pending: 'bg-secondary',
-      Failed: 'bg-danger',
+      Completed: 'badge-confirmed',
+      RefundPending: 'badge-pending',
+      Refunded: 'badge-refunded',
+      Pending: 'badge-pending',
+      Failed: 'badge-cancelled',
     };
-    return map[status] || 'bg-secondary';
+    return map[status] || 'badge-pending';
   };
 
   if (loading) return (
     <div className="text-center py-5">
-      <div className="spinner-border text-primary" role="status" />
-      <p className="mt-2">Loading your bookings...</p>
+      <div className="spinner-border" style={{ color: 'var(--primary)' }} />
+      <p className="mt-2" style={{ color: 'var(--text-secondary)' }}>
+        Loading your bookings...
+      </p>
     </div>
   );
 
   return (
     <div>
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <h4 className="mb-0">My Bookings</h4>
-        <button
-          className="btn btn-primary"
-          onClick={() => navigate('/')}
-        >
+      <div className="page-header">
+        <div>
+          <h4 className="page-title">My Bookings</h4>
+          <p style={{
+            color: 'var(--text-secondary)',
+            fontSize: '0.875rem', margin: 0
+          }}>
+            Your stay history and upcoming reservations
+          </p>
+        </div>
+        <button className="btn btn-primary"
+          onClick={() => navigate('/')}>
           + New Booking
         </button>
       </div>
 
-      {error && <div className="alert alert-danger">{error}</div>}
+      {error && (
+        <div style={{
+          background: '#f8d7da', border: '1px solid #f5c6cb',
+          borderRadius: 'var(--radius-sm)', padding: '0.75rem 1rem',
+          marginBottom: '1rem', color: 'var(--danger)', fontSize: '0.875rem'
+        }}>⚠️ {error}</div>
+      )}
 
       {bookings.length === 0 ? (
-        <div className="text-center py-5">
-          <div className="fs-1">🏨</div>
-          <h5 className="mt-3">No bookings yet</h5>
-          <p className="text-muted">
+        <div style={{
+          textAlign: 'center', padding: '4rem 2rem',
+          background: 'var(--surface)', borderRadius: 'var(--radius-lg)',
+          border: '1px solid var(--border)'
+        }}>
+          <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>🏨</div>
+          <h5 style={{ fontFamily: 'Playfair Display, serif', marginBottom: '0.5rem' }}>
+            No bookings yet
+          </h5>
+          <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>
             Start exploring hotels and book your first stay.
           </p>
-          <button
-            className="btn btn-primary"
-            onClick={() => navigate('/')}
-          >
+          <button className="btn btn-primary px-4"
+            onClick={() => navigate('/')}>
             Explore Hotels
           </button>
         </div>
       ) : (
         <>
           {bookings.map((booking) => (
-            <div className="card shadow-sm mb-3" key={booking.id}>
-              <div
-                className="card-header d-flex justify-content-between align-items-center"
-                style={{ background: '#f8f9fa' }}
-              >
-                <div>
-                  <span className="fw-bold">
-                    🏨 {hotelNames[booking.hotelId] || `Hotel #${booking.hotelId}`}
-                  </span>
-                  <small className="text-muted ms-2">
-                    Booking #{booking.id}
-                  </small>
+            <div className="booking-card" key={booking.id}>
+              <div className="booking-card-header">
+                <div className="d-flex align-items-center gap-2">
+                  <div style={{
+                    width: 36, height: 36, borderRadius: '8px',
+                    background: 'linear-gradient(135deg, var(--primary), var(--primary-light))',
+                    display: 'flex', alignItems: 'center',
+                    justifyContent: 'center', fontSize: '1.1rem',
+                    flexShrink: 0
+                  }}>
+                    🏨
+                  </div>
+                  <div>
+                    <div style={{ fontWeight: 600, fontSize: '0.95rem' }}>
+                      {hotelNames[booking.hotelId] || `Hotel #${booking.hotelId}`}
+                    </div>
+                    <div style={{
+                      fontSize: '0.75rem',
+                      color: 'var(--text-light)'
+                    }}>
+                      Booking #{String(booking.id).padStart(6, '0')}
+                    </div>
+                  </div>
                 </div>
-                <span className={`badge ${getStatusBadge(booking.status)}`}>
+                <span className={getStatusClass(booking.status)}>
                   {booking.status}
                 </span>
               </div>
 
-              <div className="card-body">
-                <div className="d-flex justify-content-between align-items-start">
-                  <div>
-                    <p className="text-muted small mb-1">
-                      📅 {new Date(booking.checkIn).toLocaleDateString('en-IN', {
-                        day: 'numeric', month: 'short', year: 'numeric'
-                      })}
-                      {' → '}
-                      {new Date(booking.checkOut).toLocaleDateString('en-IN', {
-                        day: 'numeric', month: 'short', year: 'numeric'
-                      })}
-                    </p>
-                    <p className="text-muted small mb-1">
+              <div style={{ padding: '1rem 1.25rem' }}>
+                <div className="row align-items-center">
+                  <div className="col-md-7">
+                    {/* Date range */}
+                    <div style={{
+                      display: 'flex', alignItems: 'center',
+                      gap: '0.75rem', marginBottom: '0.6rem'
+                    }}>
+                      <div style={{
+                        padding: '0.4rem 0.75rem',
+                        background: 'var(--surface-warm)',
+                        border: '1px solid var(--border)',
+                        borderRadius: 'var(--radius-sm)',
+                        fontSize: '0.85rem'
+                      }}>
+                        <div style={{
+                          fontSize: '0.7rem',
+                          color: 'var(--text-light)',
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.5px'
+                        }}>Check-in</div>
+                        <div style={{ fontWeight: 600 }}>
+                          {new Date(booking.checkIn).toLocaleDateString('en-IN', {
+                            day: 'numeric', month: 'short', year: 'numeric'
+                          })}
+                        </div>
+                      </div>
+                      <div style={{ color: 'var(--text-light)', fontSize: '1.2rem' }}>
+                        →
+                      </div>
+                      <div style={{
+                        padding: '0.4rem 0.75rem',
+                        background: 'var(--surface-warm)',
+                        border: '1px solid var(--border)',
+                        borderRadius: 'var(--radius-sm)',
+                        fontSize: '0.85rem'
+                      }}>
+                        <div style={{
+                          fontSize: '0.7rem',
+                          color: 'var(--text-light)',
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.5px'
+                        }}>Check-out</div>
+                        <div style={{ fontWeight: 600 }}>
+                          {new Date(booking.checkOut).toLocaleDateString('en-IN', {
+                            day: 'numeric', month: 'short', year: 'numeric'
+                          })}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div style={{
+                      fontSize: '0.82rem',
+                      color: 'var(--text-secondary)'
+                    }}>
                       👥 {booking.numberOfAdults} adult(s),
                       {' '}{booking.numberOfChildren} child(ren)
-                    </p>
-                    <p className="fw-bold text-primary mb-0">
-                      ₹{booking.totalFare?.toLocaleString()}
-                    </p>
+                    </div>
                   </div>
-                  <div className="text-end">
+
+                  <div className="col-md-5 text-md-end mt-2 mt-md-0">
+                    <div className="price-tag">
+                      ₹{booking.totalFare?.toLocaleString()}
+                    </div>
                     {booking.payment && (
-                      <span className={`badge ${getPaymentBadge(booking.payment.status)} d-block mb-2`}>
-                        {booking.payment.status}
-                      </span>
+                      <div className="mt-1 mb-2">
+                        <span className={getPaymentClass(booking.payment.status)}>
+                          {booking.payment.status}
+                        </span>
+                      </div>
                     )}
                     <button
                       className="btn btn-outline-primary btn-sm"
                       onClick={() => navigate(`/bookings/${booking.id}`)}
                     >
-                      View Details
+                      View Details →
                     </button>
                   </div>
                 </div>
@@ -161,24 +230,29 @@ const MyBookingsPage = () => {
             </div>
           ))}
 
-          {/* Pagination */}
           {totalPages > 1 && (
-            <div className="d-flex justify-content-center gap-2 mt-3">
-              <button
-                className="btn btn-outline-primary"
+            <div style={{
+              display: 'flex', justifyContent: 'center',
+              gap: '0.5rem', marginTop: '1.5rem'
+            }}>
+              <button className="btn btn-outline-primary btn-sm"
                 disabled={pageNumber === 1}
-                onClick={() => setPageNumber(pageNumber - 1)}
-              >
+                onClick={() => setPageNumber(p => p - 1)}>
                 ← Previous
               </button>
-              <span className="btn btn-light disabled">
-                Page {pageNumber} of {totalPages}
+              <span style={{
+                padding: '0.375rem 0.75rem',
+                background: 'var(--surface)',
+                border: '1px solid var(--border)',
+                borderRadius: 'var(--radius-sm)',
+                fontSize: '0.875rem',
+                color: 'var(--text-secondary)'
+              }}>
+                {pageNumber} / {totalPages}
               </span>
-              <button
-                className="btn btn-outline-primary"
+              <button className="btn btn-outline-primary btn-sm"
                 disabled={pageNumber === totalPages}
-                onClick={() => setPageNumber(pageNumber + 1)}
-              >
+                onClick={() => setPageNumber(p => p + 1)}>
                 Next →
               </button>
             </div>

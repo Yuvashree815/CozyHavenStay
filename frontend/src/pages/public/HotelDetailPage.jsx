@@ -16,7 +16,6 @@ const HotelDetailPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  // Date inputs for availability check
   const today = new Date().toISOString().split('T')[0];
   const tomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0];
   const [checkIn, setCheckIn] = useState(today);
@@ -39,7 +38,7 @@ const HotelDetailPage = () => {
       setHotel(hotelRes.data);
       setRatingSummary(summaryRes.data);
       setReviews(reviewsRes.data.items || []);
-    } catch (err) {
+    } catch {
       setError('Failed to load hotel details.');
     } finally {
       setLoading(false);
@@ -52,208 +51,488 @@ const HotelDetailPage = () => {
       const response = await getAvailableRoomsApi(id, checkIn, checkOut);
       setRooms(response.data);
       setAvailabilityChecked(true);
-    } catch (err) {
-      setError('Failed to check availability.');
+    } catch {
+      setError('Failed to check availability. Please try again.');
     } finally {
       setCheckingAvailability(false);
     }
   };
 
   const getAmenities = (hotel) => {
-    const amenities = [];
-    if (hotel.hasFreeWifi) amenities.push('📶 Free WiFi');
-    if (hotel.hasDining) amenities.push('🍽️ Dining');
-    if (hotel.hasParking) amenities.push('🚗 Parking');
-    if (hotel.hasSwimmingPool) amenities.push('🏊 Swimming Pool');
-    if (hotel.hasFitnessCenter) amenities.push('💪 Fitness Center');
-    if (hotel.hasRoomService) amenities.push('🛎️ Room Service');
-    return amenities;
+    const list = [];
+    if (hotel.hasFreeWifi) list.push({ icon: '📶', label: 'Free WiFi' });
+    if (hotel.hasDining) list.push({ icon: '🍽️', label: 'Dining' });
+    if (hotel.hasParking) list.push({ icon: '🚗', label: 'Free Parking' });
+    if (hotel.hasSwimmingPool) list.push({ icon: '🏊', label: 'Swimming Pool' });
+    if (hotel.hasFitnessCenter) list.push({ icon: '💪', label: 'Fitness Center' });
+    if (hotel.hasRoomService) list.push({ icon: '🛎️', label: 'Room Service' });
+    return list;
   };
 
   const renderStars = (rating) => {
-    return '⭐'.repeat(Math.round(rating));
+    const full = Math.floor(rating);
+    const stars = [];
+    for (let i = 0; i < 5; i++) {
+      stars.push(
+        <span key={i} style={{ color: i < full ? 'var(--accent)' : '#ddd' }}>
+          ★
+        </span>
+      );
+    }
+    return stars;
   };
 
+  const nights = checkIn && checkOut
+    ? Math.ceil((new Date(checkOut) - new Date(checkIn)) / 86400000)
+    : 0;
+
   if (loading) return (
-    <div className="text-center py-5">
-      <div className="spinner-border text-primary" role="status" />
-      <p className="mt-2">Loading hotel details...</p>
+    <div>
+      <div className="skeleton" style={{ height: 280, borderRadius: 'var(--radius-lg)', marginBottom: '1.5rem' }} />
+      <div className="row">
+        <div className="col-md-8">
+          <div className="skeleton" style={{ height: 24, width: '60%', marginBottom: 12 }} />
+          <div className="skeleton" style={{ height: 16, width: '40%', marginBottom: 20 }} />
+          <div className="skeleton" style={{ height: 120, marginBottom: 16 }} />
+        </div>
+      </div>
     </div>
   );
 
-  if (error) return <div className="alert alert-danger">{error}</div>;
+  if (error) return (
+    <div className="alert alert-danger rounded-3 mt-3">{error}</div>
+  );
+
   if (!hotel) return null;
+
+  const availableCount = rooms.filter(r => r.isAvailable).length;
 
   return (
     <div>
       {/* Back button */}
       <button
-        className="btn btn-outline-secondary mb-3"
+        className="btn btn-outline-primary btn-sm mb-3"
         onClick={() => navigate(-1)}
       >
-        ← Back
+        ← Back to Results
       </button>
 
-      {/* Hotel header */}
-      <div
-        className="text-white p-4 rounded mb-4"
-        style={{ background: 'linear-gradient(135deg, #0d6efd, #0a58ca)' }}
-      >
-        <div className="d-flex justify-content-between align-items-start">
-          <div>
-            <h2 className="mb-1">{hotel.name}</h2>
-            <p className="mb-2">📍 {hotel.location}</p>
-            {ratingSummary && ratingSummary.totalReviews > 0 && (
-              <span className="badge bg-warning text-dark fs-6">
-                {renderStars(ratingSummary.averageRating)} {ratingSummary.averageRating} ({ratingSummary.totalReviews} reviews)
-              </span>
-            )}
-          </div>
-        </div>
-        {hotel.description && (
-          <p className="mt-3 mb-0 opacity-75">{hotel.description}</p>
-        )}
-      </div>
+      {/* Hero banner */}
+      <div style={{
+        background: 'linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%)',
+        borderRadius: 'var(--radius-lg)',
+        padding: '2.5rem',
+        color: 'white',
+        marginBottom: '1.5rem',
+        position: 'relative',
+        overflow: 'hidden'
+      }}>
+        {/* Decorative circle */}
+        <div style={{
+          position: 'absolute',
+          top: '-40%',
+          right: '-5%',
+          width: 300,
+          height: 300,
+          background: 'radial-gradient(circle, rgba(201,168,76,0.2) 0%, transparent 70%)',
+          borderRadius: '50%'
+        }} />
 
-      {/* Amenities */}
-      <div className="card shadow-sm mb-4">
-        <div className="card-body">
-          <h5 className="card-title mb-3">Amenities</h5>
-          <div className="d-flex flex-wrap gap-2">
-            {getAmenities(hotel).map((amenity) => (
-              <span key={amenity} className="badge bg-primary fs-6 px-3 py-2">
-                {amenity}
-              </span>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Availability checker */}
-      <div className="card shadow-sm mb-4">
-        <div className="card-body">
-          <h5 className="card-title mb-3">Check Room Availability</h5>
-          <div className="row g-3 align-items-end">
-            <div className="col-md-4">
-              <label className="form-label">Check-in Date</label>
-              <input
-                type="date"
-                className="form-control"
-                value={checkIn}
-                min={today}
-                onChange={(e) => setCheckIn(e.target.value)}
-              />
-            </div>
-            <div className="col-md-4">
-              <label className="form-label">Check-out Date</label>
-              <input
-                type="date"
-                className="form-control"
-                value={checkOut}
-                min={checkIn}
-                onChange={(e) => setCheckOut(e.target.value)}
-              />
-            </div>
-            <div className="col-md-4">
-              <button
-                className="btn btn-primary w-100"
-                onClick={handleCheckAvailability}
-                disabled={checkingAvailability}
-              >
-                {checkingAvailability ? 'Checking...' : 'Check Availability'}
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Available rooms */}
-      {availabilityChecked && (
-        <div className="mb-4">
-          <h5 className="mb-3">
-            {rooms.filter(r => r.isAvailable).length === 0
-              ? '❌ No rooms available for selected dates'
-              : `✅ ${rooms.filter(r => r.isAvailable).length} Room(s) Available`}
-          </h5>
-          <div className="row">
-            {rooms.map((room) => (
-              <div className="col-md-6 mb-3" key={room.id}>
-                <div className={`card h-100 ${!room.isAvailable ? 'opacity-50' : 'shadow-sm'}`}>
-                  <div className="card-body">
-                    <div className="d-flex justify-content-between align-items-start mb-2">
-                      <h6 className="card-title mb-0">
-                        {room.bedType} Bed Room
-                      </h6>
-                      <span className={`badge ${room.isAvailable ? 'bg-success' : 'bg-danger'}`}>
-                        {room.isAvailable ? 'Available' : 'Booked'}
-                      </span>
-                    </div>
-                    <p className="text-muted small mb-1">📐 {room.roomSize}</p>
-                    <p className="text-muted small mb-1">👥 Max {room.maxOccupancy} guests</p>
-                    <p className="text-muted small mb-2">❄️ {room.isAC ? 'AC' : 'Non-AC'}</p>
-                    <p className="fw-bold text-primary mb-3">
-                      ₹{room.baseFare.toLocaleString()} / night
-                    </p>
-                    {room.isAvailable && (
-                      <button
-                        className="btn btn-success w-100"
-                        onClick={() => {
-                          if (!isAuthenticated) {
-                            navigate('/login');
-                            return;
-                          }
-                          navigate(`/book/${room.id}`, {
-                            state: {
-                              room,
-                              hotel,
-                              checkIn,
-                              checkOut,
-                            }
-                          });
-                        }}
-                      >
-                        Book Now
-                      </button>
-                    )}
+        <div style={{ position: 'relative', zIndex: 1 }}>
+          <div className="d-flex justify-content-between align-items-start flex-wrap gap-3">
+            <div>
+              <h2 style={{
+                color: 'white',
+                fontFamily: 'Playfair Display, serif',
+                fontSize: '2rem',
+                marginBottom: '0.5rem'
+              }}>
+                {hotel.name}
+              </h2>
+              <p style={{ color: 'rgba(255,255,255,0.8)', marginBottom: '0.75rem' }}>
+                📍 {hotel.location}
+              </p>
+              {ratingSummary && ratingSummary.totalReviews > 0 && (
+                <div className="d-flex align-items-center gap-2">
+                  <div style={{ fontSize: '1.2rem' }}>
+                    {renderStars(ratingSummary.averageRating)}
                   </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Reviews */}
-      <div className="card shadow-sm mb-4">
-        <div className="card-body">
-          <h5 className="card-title mb-3">
-            Guest Reviews
-            {ratingSummary && ratingSummary.totalReviews > 0 && (
-              <span className="text-muted fs-6 ms-2">
-                ({ratingSummary.totalReviews} total)
-              </span>
-            )}
-          </h5>
-          {reviews.length === 0 ? (
-            <p className="text-muted">No reviews yet for this hotel.</p>
-          ) : (
-            reviews.map((review) => (
-              <div key={review.id} className="border-bottom pb-3 mb-3">
-                <div className="d-flex justify-content-between">
-                  <span className="fw-bold">Guest #{review.userId}</span>
-                  <span className="text-warning">
-                    {'⭐'.repeat(review.rating)}
+                  <span style={{
+                    background: 'var(--accent)',
+                    color: 'var(--primary)',
+                    fontWeight: 700,
+                    padding: '0.2rem 0.6rem',
+                    borderRadius: '6px',
+                    fontSize: '0.9rem'
+                  }}>
+                    {ratingSummary.averageRating}
+                  </span>
+                  <span style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.85rem' }}>
+                    ({ratingSummary.totalReviews} reviews)
                   </span>
                 </div>
-                {review.comment && (
-                  <p className="mb-0 text-muted">{review.comment}</p>
-                )}
-                <small className="text-muted">
-                  {new Date(review.createdAt).toLocaleDateString()}
-                </small>
+              )}
+            </div>
+            <div style={{
+              background: 'rgba(255,255,255,0.15)',
+              borderRadius: 'var(--radius-md)',
+              padding: '1rem 1.5rem',
+              textAlign: 'center',
+              backdropFilter: 'blur(10px)'
+            }}>
+              <div style={{ fontSize: '2rem' }}>🏨</div>
+              <div style={{
+                color: 'var(--accent)',
+                fontWeight: 700,
+                fontSize: '0.85rem'
+              }}>
+                Premium Hotel
               </div>
-            ))
+            </div>
+          </div>
+
+          {hotel.description && (
+            <p style={{
+              color: 'rgba(255,255,255,0.75)',
+              marginTop: '1rem',
+              marginBottom: 0,
+              maxWidth: '600px',
+              fontSize: '0.95rem'
+            }}>
+              {hotel.description}
+            </p>
           )}
+        </div>
+      </div>
+
+      <div className="row">
+        {/* Left column */}
+        <div className="col-lg-8">
+          {/* Amenities */}
+          <div className="cozy-card mb-4">
+            <div style={{ padding: '1.25rem 1.5rem' }}>
+              <h5 className="section-title">Hotel Amenities</h5>
+              <div className="row mt-3">
+                {getAmenities(hotel).map(({ icon, label }) => (
+                  <div className="col-6 col-md-4 mb-3" key={label}>
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                      padding: '0.6rem 0.75rem',
+                      background: 'var(--surface-warm)',
+                      borderRadius: 'var(--radius-sm)',
+                      border: '1px solid var(--border)'
+                    }}>
+                      <span style={{ fontSize: '1.2rem' }}>{icon}</span>
+                      <span style={{
+                        fontSize: '0.85rem',
+                        fontWeight: 500,
+                        color: 'var(--text-primary)'
+                      }}>
+                        {label}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+                {getAmenities(hotel).length === 0 && (
+                  <p className="text-secondary">No amenities listed.</p>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Available rooms */}
+          {availabilityChecked && (
+            <div className="mb-4">
+              <div className="d-flex align-items-center gap-2 mb-3">
+                <h5 className="section-title mb-0">
+                  {availableCount === 0
+                    ? 'No Rooms Available'
+                    : `${availableCount} Room${availableCount > 1 ? 's' : ''} Available`}
+                </h5>
+                {availableCount > 0 && (
+                  <span style={{
+                    background: '#d4edda',
+                    color: 'var(--success)',
+                    fontSize: '0.8rem',
+                    padding: '0.2rem 0.6rem',
+                    borderRadius: '20px',
+                    fontWeight: 600
+                  }}>
+                    ✓ For {nights} night{nights > 1 ? 's' : ''}
+                  </span>
+                )}
+              </div>
+
+              <div className="row">
+                {rooms.map((room) => (
+                  <div className="col-md-6 mb-3" key={room.id}>
+                    <div className={`room-card ${room.isAvailable ? 'available' : 'unavailable'}`}>
+                      <div className="room-card-header">
+                        <div>
+                          <span style={{ fontWeight: 600, fontSize: '0.95rem' }}>
+                            🛏️ {room.bedType} Bed Room
+                          </span>
+                          <br />
+                          <span style={{
+                            fontSize: '0.8rem',
+                            color: 'var(--text-secondary)'
+                          }}>
+                            {room.roomSize} · Max {room.maxOccupancy} guests
+                          </span>
+                        </div>
+                        <span style={{
+                          background: room.isAvailable ? '#d4edda' : '#f8d7da',
+                          color: room.isAvailable ? 'var(--success)' : 'var(--danger)',
+                          fontSize: '0.75rem',
+                          padding: '0.25rem 0.6rem',
+                          borderRadius: '20px',
+                          fontWeight: 600,
+                          border: `1px solid ${room.isAvailable ? '#c3e6cb' : '#f5c6cb'}`
+                        }}>
+                          {room.isAvailable ? '✓ Available' : '✗ Booked'}
+                        </span>
+                      </div>
+
+                      <div style={{ padding: '1rem 1.25rem' }}>
+                        <div className="d-flex gap-2 mb-3">
+                          <span className="amenity-badge">
+                            ❄️ {room.isAC ? 'AC' : 'Non-AC'}
+                          </span>
+                          <span className="amenity-badge">
+                            👥 {room.maxOccupancy} guests max
+                          </span>
+                        </div>
+
+                        <div className="d-flex justify-content-between align-items-end">
+                          <div>
+                            <div className="room-price">
+                              ₹{room.baseFare.toLocaleString()}
+                            </div>
+                            <div className="room-price-label">per night + taxes</div>
+                          </div>
+
+                          {room.isAvailable && (
+                            <button
+                              className="btn btn-primary"
+                              onClick={() => {
+                                if (!isAuthenticated) {
+                                  navigate('/login');
+                                  return;
+                                }
+                                navigate(`/book/${room.id}`, {
+                                  state: { room, hotel, checkIn, checkOut }
+                                });
+                              }}
+                            >
+                              Book Now
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Reviews */}
+          <div className="cozy-card mb-4">
+            <div style={{ padding: '1.25rem 1.5rem' }}>
+              <div className="d-flex justify-content-between align-items-center mb-3">
+                <h5 className="section-title mb-0">Guest Reviews</h5>
+                {ratingSummary && ratingSummary.totalReviews > 0 && (
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{
+                      fontSize: '2rem',
+                      fontWeight: 700,
+                      color: 'var(--primary)',
+                      fontFamily: 'Playfair Display, serif',
+                      lineHeight: 1
+                    }}>
+                      {ratingSummary.averageRating}
+                    </div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                      out of 5 · {ratingSummary.totalReviews} reviews
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {reviews.length === 0 ? (
+                <div style={{
+                  textAlign: 'center',
+                  padding: '2rem',
+                  color: 'var(--text-secondary)'
+                }}>
+                  <div style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>💬</div>
+                  <p style={{ margin: 0 }}>No reviews yet. Be the first to review!</p>
+                </div>
+              ) : (
+                reviews.map((review) => (
+                  <div key={review.id} className="review-card">
+                    <div className="d-flex justify-content-between align-items-start mb-1">
+                      <div className="d-flex align-items-center gap-2">
+                        <div style={{
+                          width: 36,
+                          height: 36,
+                          borderRadius: '50%',
+                          background: 'var(--primary)',
+                          color: 'white',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: '0.85rem',
+                          fontWeight: 700
+                        }}>
+                          G
+                        </div>
+                        <div>
+                          <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>
+                            Verified Guest
+                          </div>
+                          <div style={{ fontSize: '0.75rem', color: 'var(--text-light)' }}>
+                            {new Date(review.createdAt).toLocaleDateString('en-IN', {
+                              month: 'short', year: 'numeric'
+                            })}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="review-stars" style={{ fontSize: '1rem' }}>
+                        {'★'.repeat(review.rating)}
+                        {'☆'.repeat(5 - review.rating)}
+                      </div>
+                    </div>
+                    {review.comment && (
+                      <p style={{
+                        margin: '0.5rem 0 0 44px',
+                        fontSize: '0.9rem',
+                        color: 'var(--text-secondary)',
+                        lineHeight: 1.6
+                      }}>
+                        "{review.comment}"
+                      </p>
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Right column — sticky availability checker */}
+        <div className="col-lg-4">
+          <div style={{
+            position: 'sticky',
+            top: '80px'
+          }}>
+            <div className="cozy-card">
+              <div className="cozy-card-header">
+                <h6 style={{ margin: 0, fontWeight: 600 }}>
+                  🗓️ Check Availability
+                </h6>
+              </div>
+              <div style={{ padding: '1.25rem' }}>
+                <div className="mb-3">
+                  <label className="form-label">Check-in</label>
+                  <input
+                    type="date"
+                    className="form-control"
+                    value={checkIn}
+                    min={today}
+                    onChange={(e) => setCheckIn(e.target.value)}
+                  />
+                </div>
+                <div className="mb-3">
+                  <label className="form-label">Check-out</label>
+                  <input
+                    type="date"
+                    className="form-control"
+                    value={checkOut}
+                    min={checkIn}
+                    onChange={(e) => setCheckOut(e.target.value)}
+                  />
+                </div>
+
+                {nights > 0 && (
+                  <div style={{
+                    background: 'var(--surface-warm)',
+                    border: '1px solid var(--border)',
+                    borderRadius: 'var(--radius-sm)',
+                    padding: '0.6rem 0.75rem',
+                    marginBottom: '1rem',
+                    fontSize: '0.85rem',
+                    color: 'var(--text-secondary)',
+                    display: 'flex',
+                    justifyContent: 'space-between'
+                  }}>
+                    <span>Duration</span>
+                    <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
+                      {nights} night{nights > 1 ? 's' : ''}
+                    </span>
+                  </div>
+                )}
+
+                <button
+                  className="btn btn-primary w-100"
+                  onClick={handleCheckAvailability}
+                  disabled={checkingAvailability}
+                >
+                  {checkingAvailability
+                    ? 'Checking...'
+                    : '🔍 Check Availability'}
+                </button>
+
+                {availabilityChecked && (
+                  <div style={{
+                    marginTop: '1rem',
+                    padding: '0.75rem',
+                    background: availableCount > 0 ? '#d4edda' : '#f8d7da',
+                    borderRadius: 'var(--radius-sm)',
+                    textAlign: 'center',
+                    fontSize: '0.9rem',
+                    fontWeight: 600,
+                    color: availableCount > 0 ? 'var(--success)' : 'var(--danger)'
+                  }}>
+                    {availableCount > 0
+                      ? `✓ ${availableCount} room${availableCount > 1 ? 's' : ''} available!`
+                      : '✗ No rooms available for these dates'}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Cancellation policy */}
+            <div className="cozy-card mt-3">
+              <div style={{ padding: '1.25rem' }}>
+                <h6 style={{
+                  fontWeight: 600,
+                  marginBottom: '0.75rem',
+                  color: 'var(--text-primary)'
+                }}>
+                  🛡️ Cancellation Policy
+                </h6>
+                {[
+                  { icon: '✅', text: 'Full refund if cancelled 48+ hours before check-in' },
+                  { icon: '⚠️', text: '50% refund if cancelled 24-48 hours before' },
+                  { icon: '❌', text: 'No refund within 24 hours of check-in' },
+                ].map(({ icon, text }) => (
+                  <div key={text} style={{
+                    display: 'flex',
+                    gap: '0.5rem',
+                    marginBottom: '0.5rem',
+                    fontSize: '0.82rem',
+                    color: 'var(--text-secondary)'
+                  }}>
+                    <span>{icon}</span>
+                    <span>{text}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>

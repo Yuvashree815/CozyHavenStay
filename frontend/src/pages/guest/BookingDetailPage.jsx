@@ -17,16 +17,14 @@ const BookingDetailPage = () => {
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [policyLoading, setPolicyLoading] = useState(false);
 
-  useEffect(() => {
-    fetchBooking();
-  }, [id]);
+  useEffect(() => { fetchBooking(); }, [id]);
 
   const fetchBooking = async () => {
     setLoading(true);
     try {
       const response = await getBookingByIdApi(id);
       setBooking(response.data);
-    } catch (err) {
+    } catch {
       setError('Failed to load booking details.');
     } finally {
       setLoading(false);
@@ -39,7 +37,7 @@ const BookingDetailPage = () => {
     try {
       const response = await getRefundPolicyApi(id);
       setRefundPolicy(response.data);
-    } catch (err) {
+    } catch {
       // Policy fetch failing doesn't block cancellation
     } finally {
       setPolicyLoading(false);
@@ -60,234 +58,352 @@ const BookingDetailPage = () => {
     }
   };
 
-  const getStatusBadge = (status) => {
+  const getStatusClass = (status) => {
     const map = {
-      Confirmed: 'bg-success',
-      Pending: 'bg-warning text-dark',
-      Cancelled: 'bg-danger',
+      Confirmed: 'badge-confirmed',
+      Pending: 'badge-pending',
+      Cancelled: 'badge-cancelled',
     };
-    return map[status] || 'bg-secondary';
+    return map[status] || 'badge-pending';
   };
 
-  const getPaymentStatusBadge = (status) => {
+  const getPaymentClass = (status) => {
     const map = {
-      Completed: 'bg-success',
-      RefundPending: 'bg-warning text-dark',
-      Refunded: 'bg-info',
-      Pending: 'bg-secondary',
-      Failed: 'bg-danger',
+      Completed: 'badge-confirmed',
+      RefundPending: 'badge-pending',
+      Refunded: 'badge-refunded',
+      Pending: 'badge-pending',
+      Failed: 'badge-cancelled',
     };
-    return map[status] || 'bg-secondary';
+    return map[status] || 'badge-pending';
   };
 
   if (loading) return (
     <div className="text-center py-5">
-      <div className="spinner-border text-primary" role="status" />
-      <p className="mt-2">Loading booking details...</p>
+      <div className="spinner-border" style={{ color: 'var(--primary)' }} />
     </div>
   );
 
-  if (error) return <div className="alert alert-danger">{error}</div>;
+  if (error) return (
+    <div style={{
+      background: '#f8d7da', border: '1px solid #f5c6cb',
+      borderRadius: 'var(--radius-sm)', padding: '0.75rem 1rem',
+      color: 'var(--danger)'
+    }}>⚠️ {error}</div>
+  );
+
   if (!booking) return null;
 
   return (
     <div className="row justify-content-center">
       <div className="col-md-8">
-
         {/* Success banner */}
         {bookingSuccess && (
-          <div className="alert alert-success d-flex align-items-center mb-4">
-            <span className="fs-4 me-3">🎉</span>
+          <div style={{
+            background: 'linear-gradient(135deg, var(--success), #27ae60)',
+            borderRadius: 'var(--radius-md)',
+            padding: '1.25rem 1.5rem',
+            color: 'white',
+            marginBottom: '1.5rem',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '1rem'
+          }}>
+            <span style={{ fontSize: '2rem' }}>🎉</span>
             <div>
-              <strong>Booking Confirmed!</strong> Your room has been reserved
-              successfully. Payment has been processed.
+              <div style={{ fontWeight: 700, fontSize: '1.1rem', marginBottom: '0.2rem' }}>
+                Booking Confirmed!
+              </div>
+              <div style={{ opacity: 0.9, fontSize: '0.875rem' }}>
+                Your room has been reserved and payment processed successfully.
+              </div>
             </div>
           </div>
         )}
 
-        {/* Cancel error */}
         {cancelError && (
-          <div className="alert alert-danger">{cancelError}</div>
+          <div style={{
+            background: '#f8d7da', border: '1px solid #f5c6cb',
+            borderRadius: 'var(--radius-sm)', padding: '0.75rem 1rem',
+            marginBottom: '1rem', color: 'var(--danger)', fontSize: '0.9rem'
+          }}>⚠️ {cancelError}</div>
         )}
 
-        {/* Booking header */}
-        <div className="card shadow-sm mb-4">
-          <div
-            className="card-header text-white d-flex justify-content-between align-items-center"
-            style={{ background: 'linear-gradient(135deg, #0d6efd, #0a58ca)' }}
-          >
-            <h5 className="mb-0">Booking #{booking.id}</h5>
-            <span className={`badge ${getStatusBadge(booking.status)} fs-6`}>
+        <div className="cozy-card mb-4">
+          {/* Booking header */}
+          <div style={{
+            background: 'linear-gradient(135deg, var(--primary), var(--primary-light))',
+            padding: '1.25rem 1.5rem',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center'
+          }}>
+            <div>
+              <div style={{
+                color: 'rgba(255,255,255,0.7)',
+                fontSize: '0.75rem',
+                textTransform: 'uppercase',
+                letterSpacing: '1px',
+                marginBottom: '0.25rem'
+              }}>
+                Booking Reference
+              </div>
+              <h5 style={{ color: 'white', margin: 0, fontFamily: 'Playfair Display, serif' }}>
+                #{String(booking.id).padStart(6, '0')}
+              </h5>
+            </div>
+            <span className={getStatusClass(booking.status)}>
               {booking.status}
             </span>
           </div>
 
-          <div className="card-body">
+          <div style={{ padding: '1.5rem' }}>
             {/* Dates */}
-            <div className="row mb-3">
-              <div className="col-md-6">
-                <p className="text-muted small mb-1">Check-in</p>
-                <p className="fw-bold mb-0">
+            <div style={{
+              display: 'flex',
+              gap: '1rem',
+              marginBottom: '1.5rem',
+              padding: '1rem',
+              background: 'var(--surface-warm)',
+              borderRadius: 'var(--radius-sm)',
+              border: '1px solid var(--border)'
+            }}>
+              <div style={{ flex: 1, textAlign: 'center' }}>
+                <div style={{
+                  fontSize: '0.75rem', color: 'var(--text-light)',
+                  textTransform: 'uppercase', letterSpacing: '0.5px',
+                  marginBottom: '0.25rem'
+                }}>Check-in</div>
+                <div style={{ fontWeight: 700, fontSize: '1rem' }}>
                   {new Date(booking.checkIn).toLocaleDateString('en-IN', {
-                    weekday: 'short', day: 'numeric',
-                    month: 'long', year: 'numeric'
+                    weekday: 'short', day: 'numeric', month: 'short'
                   })}
-                </p>
+                </div>
+                <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                  {new Date(booking.checkIn).getFullYear()}
+                </div>
               </div>
-              <div className="col-md-6">
-                <p className="text-muted small mb-1">Check-out</p>
-                <p className="fw-bold mb-0">
+              <div style={{
+                display: 'flex', alignItems: 'center',
+                color: 'var(--text-light)', fontSize: '1.5rem'
+              }}>→</div>
+              <div style={{ flex: 1, textAlign: 'center' }}>
+                <div style={{
+                  fontSize: '0.75rem', color: 'var(--text-light)',
+                  textTransform: 'uppercase', letterSpacing: '0.5px',
+                  marginBottom: '0.25rem'
+                }}>Check-out</div>
+                <div style={{ fontWeight: 700, fontSize: '1rem' }}>
                   {new Date(booking.checkOut).toLocaleDateString('en-IN', {
-                    weekday: 'short', day: 'numeric',
-                    month: 'long', year: 'numeric'
+                    weekday: 'short', day: 'numeric', month: 'short'
                   })}
-                </p>
+                </div>
+                <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                  {new Date(booking.checkOut).getFullYear()}
+                </div>
               </div>
             </div>
 
-            <hr />
-
-            {/* Guests */}
-            <div className="row mb-3">
-              <div className="col-md-4">
-                <p className="text-muted small mb-1">Adults</p>
-                <p className="fw-bold mb-0">{booking.numberOfAdults}</p>
-              </div>
-              <div className="col-md-4">
-                <p className="text-muted small mb-1">Children</p>
-                <p className="fw-bold mb-0">{booking.numberOfChildren}</p>
-              </div>
-              <div className="col-md-4">
-                <p className="text-muted small mb-1">Guest Ages</p>
-                <p className="fw-bold mb-0">
-                  {booking.guestAges?.join(', ') || '-'}
-                </p>
-              </div>
+            {/* Guest info */}
+            <div className="row mb-4">
+              {[
+                { label: 'Adults', value: booking.numberOfAdults },
+                { label: 'Children', value: booking.numberOfChildren },
+                { label: 'Guest Ages', value: booking.guestAges?.join(', ') || '-' },
+              ].map(({ label, value }) => (
+                <div className="col-md-4 mb-2" key={label}>
+                  <div style={{
+                    padding: '0.6rem 0.75rem',
+                    background: 'var(--surface-warm)',
+                    borderRadius: 'var(--radius-sm)',
+                    border: '1px solid var(--border)'
+                  }}>
+                    <div style={{
+                      fontSize: '0.72rem', color: 'var(--text-light)',
+                      textTransform: 'uppercase', letterSpacing: '0.5px'
+                    }}>{label}</div>
+                    <div style={{ fontWeight: 600 }}>{value}</div>
+                  </div>
+                </div>
+              ))}
             </div>
-
-            <hr />
 
             {/* Fare breakdown */}
-            <div className="row mb-3">
-              <div className="col-md-4">
-                <p className="text-muted small mb-1">Base Fare</p>
-                <p className="fw-bold mb-0">₹{booking.baseFare?.toLocaleString()}</p>
-              </div>
-              <div className="col-md-4">
-                <p className="text-muted small mb-1">Surcharge</p>
-                <p className="fw-bold mb-0">₹{booking.surchargeAmount?.toLocaleString()}</p>
-              </div>
-              <div className="col-md-4">
-                <p className="text-muted small mb-1">Total Fare</p>
-                <p className="fw-bold text-primary fs-5 mb-0">
+            <div style={{
+              background: 'var(--surface-warm)',
+              border: '1px solid var(--border)',
+              borderRadius: 'var(--radius-md)',
+              padding: '1rem 1.25rem',
+              marginBottom: '1.25rem'
+            }}>
+              <h6 style={{ marginBottom: '0.75rem', fontWeight: 600 }}>
+                💰 Fare Breakdown
+              </h6>
+              {[
+                { label: 'Base Fare', value: `₹${booking.baseFare?.toLocaleString()}` },
+                { label: 'Surcharge', value: `₹${booking.surchargeAmount?.toLocaleString()}` },
+              ].map(({ label, value }) => (
+                <div key={label} style={{
+                  display: 'flex', justifyContent: 'space-between',
+                  fontSize: '0.875rem', marginBottom: '0.4rem',
+                  color: 'var(--text-secondary)'
+                }}>
+                  <span>{label}</span>
+                  <span>{value}</span>
+                </div>
+              ))}
+              <hr style={{ borderColor: 'var(--border)', margin: '0.6rem 0' }} />
+              <div style={{
+                display: 'flex', justifyContent: 'space-between',
+                alignItems: 'center'
+              }}>
+                <span style={{ fontWeight: 600 }}>Total Fare</span>
+                <span className="price-tag">
                   ₹{booking.totalFare?.toLocaleString()}
-                </p>
+                </span>
               </div>
             </div>
 
-            <hr />
-
-            {/* Payment */}
+            {/* Payment info */}
             {booking.payment && (
-              <div className="row mb-3">
-                <div className="col-md-4">
-                  <p className="text-muted small mb-1">Payment Status</p>
-                  <span className={`badge ${getPaymentStatusBadge(booking.payment.status)}`}>
-                    {booking.payment.status}
-                  </span>
+              <div style={{
+                background: 'var(--surface-warm)',
+                border: '1px solid var(--border)',
+                borderRadius: 'var(--radius-md)',
+                padding: '1rem 1.25rem',
+                marginBottom: '1.25rem'
+              }}>
+                <h6 style={{ marginBottom: '0.75rem', fontWeight: 600 }}>
+                  💳 Payment Details
+                </h6>
+                <div className="row">
+                  <div className="col-md-4 mb-2">
+                    <div style={{
+                      fontSize: '0.72rem', color: 'var(--text-light)',
+                      textTransform: 'uppercase', letterSpacing: '0.5px',
+                      marginBottom: '0.2rem'
+                    }}>Status</div>
+                    <span className={getPaymentClass(booking.payment.status)}>
+                      {booking.payment.status}
+                    </span>
+                  </div>
+                  <div className="col-md-4 mb-2">
+                    <div style={{
+                      fontSize: '0.72rem', color: 'var(--text-light)',
+                      textTransform: 'uppercase', letterSpacing: '0.5px',
+                      marginBottom: '0.2rem'
+                    }}>Method</div>
+                    <div style={{ fontWeight: 600, fontSize: '0.875rem' }}>
+                      {booking.payment.method}
+                    </div>
+                  </div>
+                  <div className="col-md-4 mb-2">
+                    <div style={{
+                      fontSize: '0.72rem', color: 'var(--text-light)',
+                      textTransform: 'uppercase', letterSpacing: '0.5px',
+                      marginBottom: '0.2rem'
+                    }}>Reference</div>
+                    <div style={{
+                      fontWeight: 600, fontSize: '0.8rem',
+                      fontFamily: 'monospace'
+                    }}>
+                      {booking.payment.transactionReference || '-'}
+                    </div>
+                  </div>
+                  {booking.payment.refundAmount !== null &&
+                    booking.payment.refundAmount !== undefined && (
+                    <div className="col-md-4 mt-1">
+                      <div style={{
+                        fontSize: '0.72rem', color: 'var(--text-light)',
+                        textTransform: 'uppercase', letterSpacing: '0.5px',
+                        marginBottom: '0.2rem'
+                      }}>Refund Amount</div>
+                      <div style={{ fontWeight: 600, color: 'var(--info)' }}>
+                        ₹{booking.payment.refundAmount?.toLocaleString()}
+                      </div>
+                    </div>
+                  )}
                 </div>
-                <div className="col-md-4">
-                  <p className="text-muted small mb-1">Payment Method</p>
-                  <p className="fw-bold mb-0">{booking.payment.method}</p>
-                </div>
-                <div className="col-md-4">
-                  <p className="text-muted small mb-1">Transaction Ref</p>
-                  <p className="fw-bold mb-0 small">
-                    {booking.payment.transactionReference || '-'}
-                  </p>
-                </div>
-                {booking.payment.refundAmount !== null &&
-                  booking.payment.refundAmount !== undefined && (
-                  <div className="col-md-4 mt-2">
-                    <p className="text-muted small mb-1">Refund Amount</p>
-                    <p className="fw-bold text-info mb-0">
-                      ₹{booking.payment.refundAmount?.toLocaleString()}
-                    </p>
+              </div>
+            )}
+
+            {/* Actions */}
+            {booking.status === 'Confirmed' && (
+              <div>
+                {!showCancelConfirm ? (
+                  <div className="d-flex gap-2">
+                    <button
+                      className="btn btn-outline-danger"
+                      onClick={handleShowCancelConfirm}
+                    >
+                      Cancel Booking
+                    </button>
+                    {new Date(booking.checkOut) < new Date() && (
+                      <button
+                        className="btn btn-outline-primary"
+                        onClick={() => navigate(`/bookings/${id}/review`, {
+                          state: { booking }
+                        })}
+                      >
+                        ⭐ Write Review
+                      </button>
+                    )}
+                  </div>
+                ) : (
+                  <div style={{
+                    background: '#fff3cd',
+                    border: '1px solid #ffeeba',
+                    borderRadius: 'var(--radius-md)',
+                    padding: '1.25rem'
+                  }}>
+                    {policyLoading ? (
+                      <p style={{ color: '#856404', margin: 0 }}>
+                        Loading refund policy...
+                      </p>
+                    ) : refundPolicy && (
+                      <div style={{ marginBottom: '1rem' }}>
+                        <div style={{ fontWeight: 600, color: '#856404', marginBottom: '0.4rem' }}>
+                          ⚠️ Cancellation Notice
+                        </div>
+                        <p style={{ color: '#856404', fontSize: '0.875rem', marginBottom: '0.4rem' }}>
+                          {refundPolicy.policy}
+                        </p>
+                        <div style={{ fontWeight: 700, color: '#856404' }}>
+                          You will receive: ₹{refundPolicy.refundAmount?.toLocaleString()}
+                          {' '}({refundPolicy.refundPercentage}% of ₹{refundPolicy.totalFare?.toLocaleString()})
+                        </div>
+                      </div>
+                    )}
+                    <div className="d-flex gap-2">
+                      <button
+                        className="btn btn-danger"
+                        onClick={handleCancel}
+                        disabled={cancelling}
+                      >
+                        {cancelling ? 'Cancelling...' : 'Yes, Cancel Booking'}
+                      </button>
+                      <button
+                        className="btn btn-outline-secondary"
+                        onClick={() => setShowCancelConfirm(false)}
+                      >
+                        Keep Booking
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
             )}
           </div>
-
-          {/* Actions */}
-          {booking.status === 'Confirmed' && (
-            <div className="card-footer bg-white border-0 d-flex gap-2">
-              {/* Cancel button */}
-              {!showCancelConfirm ? (
-                <button
-                  className="btn btn-outline-danger"
-                  onClick={handleShowCancelConfirm}
-                >
-                  Cancel Booking
-                </button>
-              ) : (
-                <div className="w-100">
-                  {/* Refund policy before confirming cancel */}
-                  {policyLoading ? (
-                    <p className="text-muted small">Loading refund policy...</p>
-                  ) : refundPolicy && (
-                    <div className="alert alert-warning small mb-2">
-                      <strong>Refund Policy:</strong> {refundPolicy.policy}
-                      <br />
-                      <strong>You will receive: ₹{refundPolicy.refundAmount?.toLocaleString()}</strong>
-                      {' '}({refundPolicy.refundPercentage}% of ₹{refundPolicy.totalFare?.toLocaleString()})
-                    </div>
-                  )}
-                  <div className="d-flex gap-2">
-                    <button
-                      className="btn btn-danger"
-                      onClick={handleCancel}
-                      disabled={cancelling}
-                    >
-                      {cancelling ? 'Cancelling...' : 'Yes, Cancel Booking'}
-                    </button>
-                    <button
-                      className="btn btn-outline-secondary"
-                      onClick={() => setShowCancelConfirm(false)}
-                    >
-                      Keep Booking
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {/* Write review button — only if checkout date passed */}
-              {new Date(booking.checkOut) < new Date() && (
-                <button
-                  className="btn btn-outline-warning"
-                  onClick={() => navigate(`/bookings/${id}/review`, {
-                    state: { booking }
-                  })}
-                >
-                  ⭐ Write Review
-                </button>
-              )}
-            </div>
-          )}
         </div>
 
         {/* Navigation */}
         <div className="d-flex gap-2">
-          <button
-            className="btn btn-outline-primary"
-            onClick={() => navigate('/my-bookings')}
-          >
+          <button className="btn btn-outline-primary"
+            onClick={() => navigate('/my-bookings')}>
             ← My Bookings
           </button>
-          <button
-            className="btn btn-outline-secondary"
-            onClick={() => navigate('/')}
-          >
+          <button className="btn btn-outline-secondary"
+            onClick={() => navigate('/')}>
             🏠 Home
           </button>
         </div>

@@ -9,8 +9,6 @@ const BookingPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user } = useAuth();
-
-  // Data passed from HotelDetailPage via navigate state
   const { room, hotel, checkIn, checkOut } = location.state || {};
 
   const [numberOfAdults, setNumberOfAdults] = useState(1);
@@ -23,14 +21,10 @@ const BookingPage = () => {
   const [bookingLoading, setBookingLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // If no state was passed (direct URL access), redirect back
   useEffect(() => {
-    if (!room || !hotel || !checkIn || !checkOut) {
-      navigate('/');
-    }
+    if (!room || !hotel || !checkIn || !checkOut) navigate('/');
   }, []);
 
-  // Update guest ages array when counts change
   useEffect(() => {
     const total = numberOfAdults + numberOfChildren;
     setGuestAges(Array(total).fill('').map((_, i) => guestAges[i] || ''));
@@ -48,15 +42,11 @@ const BookingPage = () => {
       setFareError('Please enter valid ages for all guests.');
       return;
     }
-
     setFareLoading(true);
     setFareError('');
     try {
       const response = await calculateFareApi(roomId, {
-        checkIn,
-        checkOut,
-        numberOfAdults,
-        numberOfChildren,
+        checkIn, checkOut, numberOfAdults, numberOfChildren,
         allGuestAges: ages,
       });
       setFare(response.data);
@@ -68,84 +58,67 @@ const BookingPage = () => {
   };
 
   const handleBooking = async () => {
-    if (!fare) {
-      setError('Please calculate the fare first.');
-      return;
-    }
-
+    if (!fare) { setError('Please calculate the fare first.'); return; }
     if (fare.exceedsMaxOccupancy) {
-      setError('Number of guests exceeds room capacity.');
-      return;
+      setError('Number of guests exceeds room capacity.'); return;
     }
-
     setBookingLoading(true);
     setError('');
     try {
       const response = await createBookingApi({
-        hotelId: hotel.id,
-        roomId: Number(roomId),
-        checkIn,
-        checkOut,
-        numberOfAdults,
-        numberOfChildren,
-        guestAges: guestAges.map(Number),
-        paymentMethod,
+        hotelId: hotel.id, roomId: Number(roomId),
+        checkIn, checkOut, numberOfAdults, numberOfChildren,
+        guestAges: guestAges.map(Number), paymentMethod,
       });
-
-      navigate(`/bookings/${response.data.id}`, {
-        state: { bookingSuccess: true }
-      });
+      navigate(`/bookings/${response.data.id}`, { state: { bookingSuccess: true } });
     } catch (err) {
       const errors = err.response?.data?.errors;
-      if (errors && errors.length > 0) {
-        setError(errors.join(' '));
-      } else {
-        setError(err.response?.data?.message || 'Booking failed. Please try again.');
-      }
+      setError(errors?.length > 0
+        ? errors.join(' ')
+        : err.response?.data?.message || 'Booking failed.');
     } finally {
       setBookingLoading(false);
     }
   };
 
   const nights = checkIn && checkOut
-    ? Math.ceil((new Date(checkOut) - new Date(checkIn)) / 86400000)
-    : 0;
+    ? Math.ceil((new Date(checkOut) - new Date(checkIn)) / 86400000) : 0;
 
   if (!room || !hotel) return null;
 
   return (
     <div className="row">
       {/* Left — Booking form */}
-      <div className="col-md-7">
-        <div className="card shadow-sm mb-4">
-          <div className="card-body">
-            <h4 className="card-title mb-4">Complete Your Booking</h4>
-
-            {error && <div className="alert alert-danger">{error}</div>}
+      <div className="col-lg-7 mb-4">
+        <div className="cozy-form-card">
+          <div className="cozy-form-header">
+            <h5 style={{ color: 'white', margin: 0, fontFamily: 'Playfair Display, serif' }}>
+              🛏️ Complete Your Booking
+            </h5>
+          </div>
+          <div className="cozy-form-body">
+            {error && (
+              <div style={{
+                background: '#f8d7da', border: '1px solid #f5c6cb',
+                borderRadius: 'var(--radius-sm)', padding: '0.75rem 1rem',
+                marginBottom: '1rem', color: 'var(--danger)', fontSize: '0.9rem'
+              }}>⚠️ {error}</div>
+            )}
 
             {/* Guest count */}
             <div className="row mb-3">
               <div className="col-md-6">
-                <label className="form-label">Number of Adults</label>
-                <input
-                  type="number"
-                  className="form-control"
-                  min="1"
-                  max={room.maxOccupancy}
-                  value={numberOfAdults}
-                  onChange={(e) => setNumberOfAdults(Number(e.target.value))}
-                />
+                <label className="form-label">Adults</label>
+                <input type="number" className="form-control"
+                  min="1" max={room.maxOccupancy} value={numberOfAdults}
+                  onChange={(e) => setNumberOfAdults(Number(e.target.value))} />
               </div>
               <div className="col-md-6">
-                <label className="form-label">Number of Children</label>
-                <input
-                  type="number"
-                  className="form-control"
-                  min="0"
-                  max={room.maxOccupancy - numberOfAdults}
+                <label className="form-label">Children</label>
+                <input type="number" className="form-control"
+                  min="0" max={room.maxOccupancy - numberOfAdults}
                   value={numberOfChildren}
-                  onChange={(e) => setNumberOfChildren(Number(e.target.value))}
-                />
+                  onChange={(e) => setNumberOfChildren(Number(e.target.value))} />
               </div>
             </div>
 
@@ -155,31 +128,23 @@ const BookingPage = () => {
               <div className="row g-2">
                 {guestAges.map((age, index) => (
                   <div className="col-md-3 col-6" key={index}>
-                    <input
-                      type="number"
-                      className="form-control"
+                    <input type="number" className="form-control"
                       placeholder={`Guest ${index + 1}`}
-                      min="0"
-                      max="120"
-                      value={age}
-                      onChange={(e) => handleAgeChange(index, e.target.value)}
-                    />
+                      min="0" max="120" value={age}
+                      onChange={(e) => handleAgeChange(index, e.target.value)} />
                   </div>
                 ))}
               </div>
-              <small className="text-muted">
-                Enter age for each guest — used for fare calculation
+              <small style={{ color: 'var(--text-light)', fontSize: '0.8rem' }}>
+                Ages affect surcharge calculation
               </small>
             </div>
 
             {/* Payment method */}
             <div className="mb-4">
               <label className="form-label">Payment Method</label>
-              <select
-                className="form-select"
-                value={paymentMethod}
-                onChange={(e) => setPaymentMethod(e.target.value)}
-              >
+              <select className="form-select" value={paymentMethod}
+                onChange={(e) => setPaymentMethod(e.target.value)}>
                 <option value="UPI">UPI</option>
                 <option value="CreditCard">Credit Card</option>
                 <option value="DebitCard">Debit Card</option>
@@ -188,45 +153,73 @@ const BookingPage = () => {
               </select>
             </div>
 
-            {/* Calculate fare button */}
-            {fareError && <div className="alert alert-warning">{fareError}</div>}
-            <button
-              className="btn btn-outline-primary w-100 mb-3"
-              onClick={handleCalculateFare}
-              disabled={fareLoading}
-            >
+            {/* Calculate fare */}
+            {fareError && (
+              <div style={{
+                background: '#fff3cd', border: '1px solid #ffeeba',
+                borderRadius: 'var(--radius-sm)', padding: '0.75rem 1rem',
+                marginBottom: '1rem', color: '#856404', fontSize: '0.875rem'
+              }}>⚠️ {fareError}</div>
+            )}
+
+            <button className="btn btn-outline-primary w-100 mb-3"
+              onClick={handleCalculateFare} disabled={fareLoading}>
               {fareLoading ? 'Calculating...' : '🧮 Calculate Fare'}
             </button>
 
             {/* Fare breakdown */}
             {fare && (
-              <div className={`alert ${fare.exceedsMaxOccupancy ? 'alert-danger' : 'alert-info'}`}>
+              <div style={{
+                background: fare.exceedsMaxOccupancy
+                  ? '#f8d7da' : 'var(--surface-warm)',
+                border: `1px solid ${fare.exceedsMaxOccupancy
+                  ? '#f5c6cb' : 'var(--border)'}`,
+                borderRadius: 'var(--radius-md)',
+                padding: '1.25rem',
+                marginBottom: '1rem'
+              }}>
                 {fare.exceedsMaxOccupancy ? (
-                  <strong>❌ Guests exceed room capacity ({room.maxOccupancy} max)</strong>
+                  <div style={{ color: 'var(--danger)', fontWeight: 600 }}>
+                    ❌ Guests exceed room capacity ({room.maxOccupancy} max)
+                  </div>
                 ) : (
                   <>
-                    <div className="d-flex justify-content-between">
-                      <span>Base fare per night:</span>
-                      <span>₹{fare.baseFare.toLocaleString()}</span>
-                    </div>
-                    <div className="d-flex justify-content-between">
-                      <span>Number of nights:</span>
-                      <span>{fare.numberOfNights}</span>
-                    </div>
-                    <div className="d-flex justify-content-between">
-                      <span>Free occupancy:</span>
-                      <span>{fare.freeOccupancy} guests</span>
-                    </div>
+                    <h6 style={{ marginBottom: '0.75rem', color: 'var(--text-primary)' }}>
+                      Fare Breakdown
+                    </h6>
+                    {[
+                      { label: 'Base fare / night', value: `₹${fare.baseFare.toLocaleString()}` },
+                      { label: 'Number of nights', value: fare.numberOfNights },
+                      { label: 'Free occupancy', value: `${fare.freeOccupancy} guests` },
+                    ].map(({ label, value }) => (
+                      <div key={label} style={{
+                        display: 'flex', justifyContent: 'space-between',
+                        fontSize: '0.875rem', marginBottom: '0.4rem',
+                        color: 'var(--text-secondary)'
+                      }}>
+                        <span>{label}</span>
+                        <span style={{ fontWeight: 500 }}>{value}</span>
+                      </div>
+                    ))}
                     {fare.surchargeAmount > 0 && (
-                      <div className="d-flex justify-content-between text-warning">
-                        <span>Surcharge (extra guests):</span>
-                        <span>₹{fare.surchargeAmount.toLocaleString()}</span>
+                      <div style={{
+                        display: 'flex', justifyContent: 'space-between',
+                        fontSize: '0.875rem', marginBottom: '0.4rem',
+                        color: '#856404'
+                      }}>
+                        <span>⚠️ Extra guest surcharge</span>
+                        <span style={{ fontWeight: 500 }}>
+                          +₹{fare.surchargeAmount.toLocaleString()}
+                        </span>
                       </div>
                     )}
-                    <hr className="my-2" />
-                    <div className="d-flex justify-content-between fw-bold">
-                      <span>Total Fare:</span>
-                      <span className="text-primary fs-5">
+                    <hr style={{ borderColor: 'var(--border)', margin: '0.75rem 0' }} />
+                    <div style={{
+                      display: 'flex', justifyContent: 'space-between',
+                      alignItems: 'center'
+                    }}>
+                      <span style={{ fontWeight: 600 }}>Total Fare</span>
+                      <span className="price-tag">
                         ₹{fare.totalFare.toLocaleString()}
                       </span>
                     </div>
@@ -235,11 +228,11 @@ const BookingPage = () => {
               </div>
             )}
 
-            {/* Confirm booking button */}
             <button
-              className="btn btn-success w-100 btn-lg"
+              className="btn btn-primary w-100"
               onClick={handleBooking}
               disabled={bookingLoading || !fare || fare.exceedsMaxOccupancy}
+              style={{ padding: '0.85rem', fontSize: '1rem' }}
             >
               {bookingLoading ? 'Confirming...' : '✅ Confirm Booking'}
             </button>
@@ -247,70 +240,112 @@ const BookingPage = () => {
         </div>
       </div>
 
-      {/* Right — Booking summary */}
-      <div className="col-md-5">
-        <div className="card shadow-sm mb-4 sticky-top" style={{ top: '80px' }}>
-          <div
-            className="card-header text-white"
-            style={{ background: 'linear-gradient(135deg, #0d6efd, #0a58ca)' }}
-          >
-            <h5 className="mb-0">Booking Summary</h5>
-          </div>
-          <div className="card-body">
-            <h6 className="fw-bold">{hotel.name}</h6>
-            <p className="text-muted small mb-3">📍 {hotel.location}</p>
+      {/* Right — Summary */}
+      <div className="col-lg-5">
+        <div style={{ position: 'sticky', top: '80px' }}>
+          <div className="cozy-card">
+            <div style={{
+              background: 'linear-gradient(135deg, var(--primary), var(--primary-light))',
+              padding: '1.25rem 1.5rem', color: 'white'
+            }}>
+              <h6 style={{ color: 'white', margin: 0, fontWeight: 600 }}>
+                📋 Booking Summary
+              </h6>
+            </div>
+            <div style={{ padding: '1.25rem' }}>
+              <h6 style={{ fontFamily: 'Playfair Display, serif', marginBottom: '0.25rem' }}>
+                {hotel.name}
+              </h6>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '1rem' }}>
+                📍 {hotel.location}
+              </p>
 
-            <div className="mb-2">
-              <span className="text-muted">Room Type:</span>
-              <span className="float-end fw-bold">{room.bedType} Bed</span>
-            </div>
-            <div className="mb-2">
-              <span className="text-muted">Room Size:</span>
-              <span className="float-end">{room.roomSize}</span>
-            </div>
-            <div className="mb-2">
-              <span className="text-muted">AC:</span>
-              <span className="float-end">{room.isAC ? 'Yes' : 'No'}</span>
-            </div>
-            <hr />
-            <div className="mb-2">
-              <span className="text-muted">Check-in:</span>
-              <span className="float-end fw-bold">
-                {new Date(checkIn).toLocaleDateString('en-IN', {
-                  day: 'numeric', month: 'short', year: 'numeric'
-                })}
-              </span>
-            </div>
-            <div className="mb-2">
-              <span className="text-muted">Check-out:</span>
-              <span className="float-end fw-bold">
-                {new Date(checkOut).toLocaleDateString('en-IN', {
-                  day: 'numeric', month: 'short', year: 'numeric'
-                })}
-              </span>
-            </div>
-            <div className="mb-2">
-              <span className="text-muted">Duration:</span>
-              <span className="float-end">{nights} night{nights !== 1 ? 's' : ''}</span>
-            </div>
-            <hr />
-            <div className="mb-2">
-              <span className="text-muted">Base fare/night:</span>
-              <span className="float-end">₹{room.baseFare.toLocaleString()}</span>
-            </div>
-            <div className="mb-2">
-              <span className="text-muted">Booked by:</span>
-              <span className="float-end">{user?.fullName}</span>
-            </div>
+              {[
+                { label: 'Room Type', value: `${room.bedType} Bed` },
+                { label: 'Room Size', value: room.roomSize },
+                { label: 'Air Conditioning', value: room.isAC ? 'Yes ❄️' : 'No' },
+                { label: 'Max Guests', value: `${room.maxOccupancy} persons` },
+              ].map(({ label, value }) => (
+                <div key={label} style={{
+                  display: 'flex', justifyContent: 'space-between',
+                  marginBottom: '0.5rem', fontSize: '0.875rem'
+                }}>
+                  <span style={{ color: 'var(--text-secondary)' }}>{label}</span>
+                  <span style={{ fontWeight: 600 }}>{value}</span>
+                </div>
+              ))}
 
-            {/* Cancellation policy notice */}
-            <div className="alert alert-light border mt-3 mb-0 small">
-              <strong>Cancellation Policy:</strong>
-              <ul className="mb-0 ps-3 mt-1">
-                <li>Full refund if cancelled 48+ hours before check-in</li>
-                <li>50% refund if cancelled 24-48 hours before</li>
-                <li>No refund within 24 hours of check-in</li>
-              </ul>
+              <hr style={{ borderColor: 'var(--border)', margin: '0.75rem 0' }} />
+
+              {[
+                {
+                  label: 'Check-in', value: new Date(checkIn).toLocaleDateString('en-IN', {
+                    day: 'numeric', month: 'short', year: 'numeric'
+                  })
+                },
+                {
+                  label: 'Check-out', value: new Date(checkOut).toLocaleDateString('en-IN', {
+                    day: 'numeric', month: 'short', year: 'numeric'
+                  })
+                },
+                { label: 'Duration', value: `${nights} night${nights > 1 ? 's' : ''}` },
+              ].map(({ label, value }) => (
+                <div key={label} style={{
+                  display: 'flex', justifyContent: 'space-between',
+                  marginBottom: '0.5rem', fontSize: '0.875rem'
+                }}>
+                  <span style={{ color: 'var(--text-secondary)' }}>{label}</span>
+                  <span style={{ fontWeight: 600 }}>{value}</span>
+                </div>
+              ))}
+
+              <hr style={{ borderColor: 'var(--border)', margin: '0.75rem 0' }} />
+
+              <div style={{
+                display: 'flex', justifyContent: 'space-between',
+                alignItems: 'center', marginBottom: '1rem'
+              }}>
+                <span style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
+                  Base fare / night
+                </span>
+                <span style={{ fontWeight: 600 }}>
+                  ₹{room.baseFare.toLocaleString()}
+                </span>
+              </div>
+
+              <div style={{
+                display: 'flex', justifyContent: 'space-between',
+                alignItems: 'center', marginBottom: '1rem'
+              }}>
+                <span style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
+                  Booked by
+                </span>
+                <span style={{ fontWeight: 600 }}>{user?.fullName}</span>
+              </div>
+
+              {/* Cancellation policy */}
+              <div style={{
+                background: 'var(--surface-warm)',
+                border: '1px solid var(--border)',
+                borderRadius: 'var(--radius-sm)',
+                padding: '0.75rem 1rem',
+                fontSize: '0.8rem'
+              }}>
+                <div style={{ fontWeight: 600, marginBottom: '0.4rem' }}>
+                  🛡️ Cancellation Policy
+                </div>
+                {[
+                  '✅ Full refund — cancel 48+ hours before',
+                  '⚠️ 50% refund — cancel 24-48 hours before',
+                  '❌ No refund — cancel within 24 hours',
+                ].map(text => (
+                  <div key={text} style={{
+                    color: 'var(--text-secondary)', marginBottom: '0.2rem'
+                  }}>
+                    {text}
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </div>
