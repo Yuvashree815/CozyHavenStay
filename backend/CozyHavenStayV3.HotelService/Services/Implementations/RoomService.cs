@@ -125,14 +125,11 @@ namespace CozyHavenStayV3.HotelService.Services.Implementations
                 ?? throw new KeyNotFoundException("Room not found.");
 
             if (request.CheckOut <= request.CheckIn)
-            {
                 throw new ArgumentException("Check-out date must be after check-in date.");
-            }
 
             var numberOfNights = (request.CheckOut.Date - request.CheckIn.Date).Days;
-
-            var totalGuests = request.AllGuestAges.Count;
             var freeOccupancy = FreeOccupancy[room.BedType];
+            var totalGuests = request.AllGuestAges.Count;
 
             if (totalGuests > room.MaxOccupancy)
             {
@@ -150,18 +147,31 @@ namespace CozyHavenStayV3.HotelService.Services.Implementations
                 };
             }
 
-            var sortedAges = request.AllGuestAges.OrderBy(a => a).ToList();
-            var extraGuestAges = sortedAges.Skip(freeOccupancy).ToList();
+            // Step 1 — Children 5 and under are always free
+            var alwaysFreeCount = request.AllGuestAges.Count(a => a <= 5);
 
+            // Step 2 — Remaining guests (age > 5), adults fill free slots first
+            var remainingGuests = request.AllGuestAges
+                .Where(a => a > 5)
+                .OrderByDescending(a => a) // adults (highest age) fill free slots first
+                .ToList();
+
+            // Step 3 — Adjust free occupancy after always-free children
+            var adjustedFreeOccupancy = Math.Max(0, freeOccupancy - alwaysFreeCount);
+
+            // Step 4 — Anyone beyond adjusted free occupancy gets surcharged
+            var extraGuests = remainingGuests.Skip(adjustedFreeOccupancy).ToList();
+
+            // Step 5 — Calculate per-night surcharge
             decimal perNightSurcharge = 0;
-            foreach (var age in extraGuestAges)
+            foreach (var age in extraGuests)
             {
                 var rate = age > ChildAgeThreshold ? AdultSurchargeRate : ChildSurchargeRate;
                 perNightSurcharge += room.BaseFare * rate;
             }
 
-            var perNightTotal = room.BaseFare + perNightSurcharge;
             var totalSurcharge = perNightSurcharge * numberOfNights;
+            var perNightTotal = room.BaseFare + perNightSurcharge;
             var totalFare = perNightTotal * numberOfNights;
 
             return new FareCalculationResponseDto
