@@ -2,6 +2,8 @@
 
 A professional hotel booking platform frontend built with React 18 + Vite, connected to a .NET 8 microservices backend via an Ocelot API Gateway.
 
+**Developer:** Yuvashree R
+
 ---
 
 ## Tech Stack
@@ -12,7 +14,7 @@ A professional hotel booking platform frontend built with React 18 + Vite, conne
 | Vite | Build tool and dev server |
 | React Router DOM | Client-side routing |
 | Axios | HTTP client with JWT interceptors |
-| Bootstrap 5 + React Bootstrap | UI components and grid |
+| Bootstrap 5 | UI components and responsive grid |
 | useContext + useReducer | Global auth state management |
 | Google Fonts (Playfair Display + Inter) | Typography |
 
@@ -20,47 +22,51 @@ A professional hotel booking platform frontend built with React 18 + Vite, conne
 
 ## Project Structure
 
+```
 src/
-├── api/                    # Axios instance + all API call functions
-│   ├── axiosInstance.js    # Base Axios config, JWT interceptors
-│   ├── authApi.js          # Identity service calls
-│   ├── hotelApi.js         # Hotel and room calls + filter endpoint
-│   ├── bookingApi.js       # Booking lifecycle calls
-│   └── reviewApi.js        # Review and rating calls
-├── context/                # Global state
-│   ├── AuthContext.jsx     # useContext + useReducer auth provider
-│   └── AuthReducer.js      # LOGIN / LOGOUT / UPDATE_PROFILE actions
-├── components/             # Reusable components
-│   ├── Navbar.jsx          # Role-aware navigation
-│   ├── ProtectedRoute.jsx  # Redirects unauthenticated users
-│   └── RoleRoute.jsx       # Redirects unauthorized roles
+├── api/                     # Axios instance + all API call functions
+│   ├── axiosInstance.js     # Base Axios config, JWT interceptors
+│   ├── authApi.js           # Identity service calls (login, register, forgot/reset password)
+│   ├── hotelApi.js          # Hotel and room calls + filter endpoint
+│   ├── bookingApi.js        # Booking lifecycle calls
+│   └── reviewApi.js         # Review and rating calls
+├── context/                 # Global state
+│   ├── AuthContext.jsx      # useContext + useReducer auth provider
+│   └── AuthReducer.js       # LOGIN / LOGOUT / UPDATE_PROFILE actions
+├── components/              # Reusable components
+│   ├── Navbar.jsx           # Role-aware navigation
+│   ├── ProtectedRoute.jsx   # Redirects unauthenticated users
+│   └── RoleRoute.jsx        # Redirects unauthorized roles
 ├── pages/
-│   ├── public/             # No login required
-│   │   ├── HomePage.jsx          # Hero search + smart keyword parsing
-│   │   ├── SearchResultsPage.jsx # Hotel cards + active filter chips
-│   │   └── HotelDetailPage.jsx   # Availability checker + room cards + reviews
+│   ├── public/              # No login required
+│   │   ├── HomePage.jsx           # Hero search + smart keyword parsing
+│   │   ├── SearchResultsPage.jsx  # Hotel cards + filter chips + sort
+│   │   └── HotelDetailPage.jsx    # Availability checker + room cards + reviews
 │   ├── auth/
-│   │   ├── LoginPage.jsx         # JWT login + role-based redirect
-│   │   └── RegisterPage.jsx      # Guest / HotelOwner registration
+│   │   ├── LoginPage.jsx          # JWT login + role-based redirect
+│   │   ├── RegisterPage.jsx       # Guest / HotelOwner registration + real-time validation
+│   │   ├── ForgotPasswordPage.jsx # Send password reset email
+│   │   └── ResetPasswordPage.jsx  # Reset password via token link
 │   ├── guest/
-│   │   ├── ProfilePage.jsx       # View + edit profile
-│   │   ├── MyBookingsPage.jsx    # Booking history with hotel names
-│   │   ├── BookingDetailPage.jsx # Fare breakdown + refund policy + cancel
-│   │   ├── BookingPage.jsx       # Fare calculator + booking confirmation
-│   │   └── WriteReviewPage.jsx   # Star rating + comment submission
+│   │   ├── ProfilePage.jsx        # View + edit profile
+│   │   ├── MyBookingsPage.jsx     # Booking history with hotel names
+│   │   ├── BookingDetailPage.jsx  # Fare breakdown + refund policy + cancel
+│   │   ├── BookingPage.jsx        # Fare calculator + booking confirmation
+│   │   └── WriteReviewPage.jsx    # Star rating + comment submission
 │   ├── owner/
-│   │   ├── OwnerDashboardPage.jsx   # Stats + quick actions + hotel summary
-│   │   ├── MyHotelsPage.jsx         # Hotels list + expandable rooms panel
-│   │   ├── HotelFormPage.jsx        # Create / edit hotel (same component)
-│   │   ├── RoomFormPage.jsx         # Create / edit room (same component)
-│   │   ├── HotelBookingsPage.jsx    # All bookings for a hotel
-│   │   └── PendingRefundsPage.jsx   # Approve pending refunds
+│   │   ├── OwnerDashboardPage.jsx    # Stats + quick actions + hotel summary
+│   │   ├── MyHotelsPage.jsx          # Hotels list + expandable rooms panel
+│   │   ├── HotelFormPage.jsx         # Create / edit hotel with image URL preview
+│   │   ├── RoomFormPage.jsx          # Create / edit room with image URL preview
+│   │   ├── HotelBookingsPage.jsx     # All bookings for a hotel
+│   │   └── PendingRefundsPage.jsx    # Approve pending refunds
 │   └── admin/
-│       ├── AdminDashboardPage.jsx   # Stats + register admin modal
-│       ├── AllUsersPage.jsx         # User table + role filter chips
-│       └── AllHotelsPage.jsx        # Hotel table + status filter chips
+│       ├── AdminDashboardPage.jsx    # Stats + register admin modal
+│       ├── AllUsersPage.jsx          # User table + role filter chips
+│       └── AllHotelsPage.jsx         # Hotel table + status filter chips
 └── utils/
-└── searchParser.js     # Smart keyword search parser
+    └── searchParser.js       # Smart keyword search parser
+```
 
 ---
 
@@ -84,7 +90,9 @@ cp .env.example .env
 ```
 
 Update `.env` with your gateway URL:
+```
 VITE_API_BASE_URL=https://localhost:7100
+```
 
 ### Start Development Server
 
@@ -119,20 +127,42 @@ Detects 30 Indian cities and 6 amenity categories (pool, wifi, gym, dining, park
 - Auto-redirect on login based on role (Admin → dashboard, HotelOwner → dashboard, Guest → home)
 - 401 interceptor — clears auth and redirects to login on token expiry
 
+### Forgot Password Flow
+- "Forgot password?" link on login page
+- User enters email → backend sends reset link to registered email
+- Reset link contains secure token valid for 1 hour
+- ResetPasswordPage shows password strength indicator and requirements checklist
+- On success → auto-redirect to login after 3 seconds
+
+### Registration with Real-Time Validation
+- Green border + ✓ when field is valid
+- Red border + ⚠️ message when field is invalid
+- Password strength bar (Weak / Fair / Good / Strong)
+- Live password requirements checklist (length, uppercase, lowercase, number, special character)
+- Passwords match indicator on confirm password field
+
+### Hotel & Room Images
+- Hotel owners can add image URLs when creating/editing hotels and rooms
+- Live image preview in the form before saving
+- Real hotel photos displayed in search result cards
+- Hero banner with real image and dark overlay on hotel detail page
+- Room images shown in availability checker
+
 ### Role-Based Journeys
 
 **Guest**
-- Search hotels by location or natural language
+- Search hotels by location or natural language query
 - Check room availability by date range
-- Calculate fare with guest-based surcharges
-- Book rooms with UPI / Credit Card / Debit Card / Net Banking / Cash
+- Calculate fare with transparent guest-based surcharge breakdown
+- Book rooms with multiple payment methods
+- Receive booking confirmation email after successful booking
 - View booking history with hotel names resolved cross-service
-- Cancel bookings — refund policy shown before confirmation
+- View refund policy before cancelling
 - Write verified reviews after completed stays
 
 **Hotel Owner**
-- Create and manage hotel listings with amenities
-- Add, edit, and delete individual rooms with custom pricing
+- Create and manage hotel listings with amenities and image URL
+- Add, edit, and delete individual rooms with custom pricing and image URL
 - View all bookings for their properties
 - Approve pending refunds with refund amount displayed
 
@@ -175,7 +205,7 @@ Custom CSS variables defined in `src/index.css`:
 
 **Fonts:** Playfair Display (headings) + Inter (body) via Google Fonts
 
-**Custom components:** `cozy-card`, `booking-card`, `stat-card`, `hotel-card`, `room-card`, `pro-table`, `admin-card`, `page-header`, `section-title`, `city-pill`, `feature-card`, `amenity-badge`, `role-admin`, `role-owner`, `role-user`, `status-active`, `status-inactive`, `badge-confirmed`, `badge-cancelled`, `badge-pending`, `badge-refunded`, `skeleton`
+**Custom components:** `cozy-card`, `booking-card`, `stat-card`, `hotel-card`, `room-card`, `pro-table`, `admin-card`, `page-header`, `section-title`, `amenity-badge`, `role-admin`, `role-owner`, `role-user`, `status-active`, `status-inactive`, `badge-confirmed`, `badge-cancelled`, `badge-pending`, `badge-refunded`, `skeleton`
 
 ---
 
@@ -201,13 +231,21 @@ The Axios instance (`src/api/axiosInstance.js`) automatically:
 | Role | Email | Password |
 |---|---|---|
 | Admin | admin@cozyhavenstay.com | CozyHaven@Admin123 |
-| HotelOwner | Register at `/register` | Your choice |
-| Guest | Register at `/register` | Your choice |
+| Hotel Owner | rajesh.owner@cozyhaven.com | CozyOwner@123 |
+| Guest | ananya@gmail.com | CozyGuest@123 |
 
 ---
 
 ## Known Limitations
 
-- Hotel and room images are not supported — placeholder emoji used
 - No real payment gateway — payments are simulated and always succeed
 - Smart search covers 30 Indian cities — international cities fall back to direct text match
+- No TypeScript — plain JavaScript used throughout
+
+---
+
+## Author
+
+**Yuvashree R**  
+Hexaware Full Stack Developer Training — .NET + React Batch  
+GitHub: [@Yuvashree815](https://github.com/Yuvashree815)
