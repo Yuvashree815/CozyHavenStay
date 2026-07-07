@@ -12,5 +12,7 @@ namespace CozyHavenStayV3.BookingService.Services.Interfaces
         Task<bool> CheckAvailabilityAsync(int roomId, DateTime checkIn, DateTime checkOut);
         Task BlockRoomForBookingAsync(int roomId, DateTime checkIn, DateTime checkOut, int bookingId);
         Task ReleaseBookingBlockAsync(int roomId, int bookingId);
+        Task<HotelInfoResponse?> GetHotelDetailsAsync(int hotelId);
+        Task<RoomInfoResponse?> GetRoomDetailsAsync(int roomId);
     }
 }

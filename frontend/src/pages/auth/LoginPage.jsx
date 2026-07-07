@@ -33,21 +33,18 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="row justify-content-center align-items-center" style={{ minHeight: '80vh' }}>
+    <div className="row justify-content-center align-items-center"
+      style={{ minHeight: '80vh' }}>
       <div className="col-md-5 col-lg-4">
 
         {/* Logo */}
         <div className="text-center mb-4">
           <div style={{
-            width: 64,
-            height: 64,
+            width: 64, height: 64,
             background: 'linear-gradient(135deg, var(--primary), var(--primary-light))',
-            borderRadius: '16px',
-            display: 'inline-flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: '2rem',
-            marginBottom: '1rem',
+            borderRadius: '16px', display: 'inline-flex',
+            alignItems: 'center', justifyContent: 'center',
+            fontSize: '2rem', marginBottom: '1rem',
             boxShadow: 'var(--shadow-md)'
           }}>
             🏨
@@ -62,12 +59,9 @@ const LoginPage = () => {
           <div className="cozy-form-body">
             {error && (
               <div style={{
-                background: '#f8d7da',
-                border: '1px solid #f5c6cb',
-                borderRadius: 'var(--radius-sm)',
-                padding: '0.75rem 1rem',
-                marginBottom: '1.25rem',
-                color: 'var(--danger)',
+                background: '#f8d7da', border: '1px solid #f5c6cb',
+                borderRadius: 'var(--radius-sm)', padding: '0.75rem 1rem',
+                marginBottom: '1.25rem', color: 'var(--danger)',
                 fontSize: '0.9rem'
               }}>
                 ⚠️ {error}
@@ -75,6 +69,7 @@ const LoginPage = () => {
             )}
 
             <form onSubmit={handleSubmit}>
+              {/* Email */}
               <div className="mb-3">
                 <label className="form-label">Email Address</label>
                 <input
@@ -89,8 +84,22 @@ const LoginPage = () => {
                 />
               </div>
 
+              {/* Password with forgot link */}
               <div className="mb-4">
-                <label className="form-label">Password</label>
+                <div className="d-flex justify-content-between align-items-center mb-1">
+                  <label className="form-label mb-0">Password</label>
+                  <Link
+                    to="/forgot-password"
+                    style={{
+                      fontSize: '0.82rem',
+                      color: 'var(--primary)',
+                      fontWeight: 500,
+                      textDecoration: 'none'
+                    }}
+                  >
+                    Forgot password?
+                  </Link>
+                </div>
                 <input
                   type="password"
                   className="form-control"
@@ -117,24 +126,19 @@ const LoginPage = () => {
 
             <p className="text-center mb-0" style={{ fontSize: '0.9rem' }}>
               Don't have an account?{' '}
-              <Link
-                to="/register"
-                style={{ color: 'var(--primary)', fontWeight: 600 }}
-              >
+              <Link to="/register"
+                style={{ color: 'var(--primary)', fontWeight: 600 }}>
                 Create one free
               </Link>
             </p>
           </div>
         </div>
 
-        {/* Demo credentials hint */}
+        {/* Demo credentials */}
         <div style={{
-          marginTop: '1rem',
-          padding: '0.75rem 1rem',
-          background: 'var(--surface)',
-          borderRadius: 'var(--radius-sm)',
-          border: '1px solid var(--border)',
-          fontSize: '0.8rem',
+          marginTop: '1rem', padding: '0.75rem 1rem',
+          background: 'var(--surface)', borderRadius: 'var(--radius-sm)',
+          border: '1px solid var(--border)', fontSize: '0.8rem',
           color: 'var(--text-secondary)'
         }}>
           <strong style={{ color: 'var(--text-primary)' }}>Demo Admin:</strong>{' '}

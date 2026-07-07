@@ -8,7 +8,9 @@ namespace CozyHavenStayV3.HotelService.Validators
         public FareCalculationRequestDtoValidator()
         {
             RuleFor(x => x.CheckIn)
-                .GreaterThanOrEqualTo(DateTime.UtcNow.Date).WithMessage("Check-in date cannot be in the past.");
+                .NotEmpty().WithMessage("Check-in date is required.")
+                .GreaterThanOrEqualTo(DateTime.UtcNow.Date)
+                .WithMessage("Check-in date cannot be in the past.");
 
             RuleFor(x => x.CheckOut)
                 .GreaterThan(x => x.CheckIn).WithMessage("Check-out date must be after check-in date.");

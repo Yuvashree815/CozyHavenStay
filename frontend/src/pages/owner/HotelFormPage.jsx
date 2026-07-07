@@ -11,6 +11,7 @@ const HotelFormPage = () => {
     name: '', location: '', description: '',
     hasDining: false, hasParking: false, hasFreeWifi: false,
     hasRoomService: false, hasSwimmingPool: false, hasFitnessCenter: false,
+    imageUrl: '',
   });
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(isEditing);
@@ -31,6 +32,7 @@ const HotelFormPage = () => {
         hasDining: h.hasDining, hasParking: h.hasParking,
         hasFreeWifi: h.hasFreeWifi, hasRoomService: h.hasRoomService,
         hasSwimmingPool: h.hasSwimmingPool, hasFitnessCenter: h.hasFitnessCenter,
+        imageUrl: h.imageUrl || '',
       });
     } catch {
       setError('Failed to load hotel details.');
@@ -143,6 +145,42 @@ const HotelFormPage = () => {
                 }}>
                   {formData.description.length}/1000
                 </div>
+              </div>
+
+              {/* Image URL */}
+              <div className="mb-3">
+                <label className="form-label">
+                  Hotel Image URL{' '}
+                  <span style={{ color: 'var(--text-light)', fontWeight: 400 }}>
+                    (optional)
+                  </span>
+                </label>
+                <input
+                  type="url"
+                  className="form-control"
+                  name="imageUrl"
+                  value={formData.imageUrl}
+                  onChange={handleChange}
+                  placeholder="https://images.unsplash.com/..."
+                />
+                <small style={{ color: 'var(--text-light)', fontSize: '0.78rem' }}>
+                  Paste a direct image URL — recommended size 800×500px
+                </small>
+                {formData.imageUrl && (
+                  <div style={{ marginTop: '0.5rem' }}>
+                    <img
+                      src={formData.imageUrl}
+                      alt="Hotel preview"
+                      style={{
+                        width: '100%', height: 160,
+                        objectFit: 'cover',
+                        borderRadius: 'var(--radius-sm)',
+                        border: '1px solid var(--border)'
+                      }}
+                      onError={(e) => e.target.style.display = 'none'}
+                    />
+                  </div>
+                )}
               </div>
 
               {/* Amenities */}

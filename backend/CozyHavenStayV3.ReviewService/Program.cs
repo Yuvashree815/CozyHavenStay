@@ -1,11 +1,3 @@
-using System.Text;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
-using Microsoft.OpenApi.Models;
-using FluentValidation;
-using log4net;
-using log4net.Config;
 using CozyHavenStayV3.ReviewService.Data;
 using CozyHavenStayV3.ReviewService.Mapping;
 using CozyHavenStayV3.ReviewService.Middleware;
@@ -13,6 +5,15 @@ using CozyHavenStayV3.ReviewService.Repositories.Implementations;
 using CozyHavenStayV3.ReviewService.Repositories.Interfaces;
 using CozyHavenStayV3.ReviewService.Services.Implementations;
 using CozyHavenStayV3.ReviewService.Services.Interfaces;
+using FluentValidation;
+using log4net;
+using log4net.Config;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
+using System.Reflection;
+using System.Text;
 
 namespace CozyHavenStayV3.ReviewService
 {
@@ -22,7 +23,7 @@ namespace CozyHavenStayV3.ReviewService
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            var logRepository = LogManager.GetRepository(System.Reflection.Assembly.GetEntryAssembly());
+            var logRepository = LogManager.GetRepository(Assembly.GetEntryAssembly()!);
             XmlConfigurator.Configure(logRepository, new FileInfo("log4net.config"));
 
             builder.Services.AddDbContext<ApplicationDbContext>(options =>

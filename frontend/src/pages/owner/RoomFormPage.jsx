@@ -8,7 +8,7 @@ const RoomFormPage = () => {
   const isEditing = !!roomId;
 
   const [formData, setFormData] = useState({
-    roomSize: '', bedType: 'Single', isAC: false, baseFare: '',
+    roomSize: '', bedType: 'Single', isAC: false, baseFare: '', imageUrl: '',
   });
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(isEditing);
@@ -26,6 +26,7 @@ const RoomFormPage = () => {
       setFormData({
         roomSize: r.roomSize, bedType: r.bedType,
         isAC: r.isAC, baseFare: r.baseFare,
+        imageUrl: r.imageUrl || '',
       });
     } catch {
       setError('Failed to load room details.');
@@ -135,7 +136,7 @@ const RoomFormPage = () => {
                   required min="1" placeholder="e.g. 2500" />
               </div>
 
-              <div className="mb-4">
+              <div className="mb-3">
                 <label style={{
                   display: 'flex', alignItems: 'center', gap: '0.5rem',
                   padding: '0.75rem 1rem',
@@ -152,6 +153,42 @@ const RoomFormPage = () => {
                     style={{ accentColor: 'var(--primary)' }} />
                   <span style={{ fontWeight: 500 }}>❄️ Air Conditioned</span>
                 </label>
+              </div>
+
+              {/* Room Image URL */}
+              <div className="mb-3">
+                <label className="form-label">
+                  Room Image URL{' '}
+                  <span style={{ color: 'var(--text-light)', fontWeight: 400 }}>
+                    (optional)
+                  </span>
+                </label>
+                <input
+                  type="url"
+                  className="form-control"
+                  name="imageUrl"
+                  value={formData.imageUrl}
+                  onChange={handleChange}
+                  placeholder="https://images.unsplash.com/..."
+                />
+                <small style={{ color: 'var(--text-light)', fontSize: '0.78rem' }}>
+                  Paste a direct image URL — recommended size 800×500px
+                </small>
+                {formData.imageUrl && (
+                  <div style={{ marginTop: '0.5rem' }}>
+                    <img
+                      src={formData.imageUrl}
+                      alt="Room preview"
+                      style={{
+                        width: '100%', height: 140,
+                        objectFit: 'cover',
+                        borderRadius: 'var(--radius-sm)',
+                        border: '1px solid var(--border)'
+                      }}
+                      onError={(e) => e.target.style.display = 'none'}
+                    />
+                  </div>
+                )}
               </div>
 
               {/* Preview */}
@@ -173,9 +210,7 @@ const RoomFormPage = () => {
                   display: 'flex', flexWrap: 'wrap', gap: '0.5rem',
                   fontSize: '0.85rem'
                 }}>
-                  <span className="amenity-badge">
-                    🛏️ {formData.bedType} Bed
-                  </span>
+                  <span className="amenity-badge">🛏️ {formData.bedType} Bed</span>
                   <span className="amenity-badge">
                     👥 Max {maxOccupancyMap[formData.bedType]}
                   </span>

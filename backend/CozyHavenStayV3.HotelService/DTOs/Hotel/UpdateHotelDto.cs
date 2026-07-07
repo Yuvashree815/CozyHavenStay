@@ -11,5 +11,6 @@
         public bool HasRoomService { get; set; }
         public bool HasSwimmingPool { get; set; }
         public bool HasFitnessCenter { get; set; }
+        public string? ImageUrl { get; set; }
     }
 }

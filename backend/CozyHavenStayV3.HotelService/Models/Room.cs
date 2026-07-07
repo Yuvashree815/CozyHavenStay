@@ -19,6 +19,7 @@
         public decimal BaseFare { get; set; }
 
         public bool IsActive { get; set; } = true;
+        public string? ImageUrl { get; set; }
 
         // Navigation property
         public ICollection<RoomBlock> RoomBlocks { get; set; } = new List<RoomBlock>();

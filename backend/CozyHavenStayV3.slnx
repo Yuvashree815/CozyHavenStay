@@ -4,6 +4,7 @@
   </Folder>
   <Project Path="CozyHavenStayV3.BookingService.Tests/CozyHavenStayV3.BookingService.Tests.csproj" Id="fb0aca81-48b7-4d50-9c91-534c840d00a5" />
   <Project Path="CozyHavenStayV3.BookingService/CozyHavenStayV3.BookingService.csproj" Id="6316a71b-2cbb-4d98-beeb-8911b6dc27a5" />
+  <Project Path="CozyHavenStayV3.DataSeeder/CozyHavenStayV3.DataSeeder.csproj" Id="a55224be-2c26-499a-ba01-3ab8e845106b" />
   <Project Path="CozyHavenStayV3.Gateway/CozyHavenStayV3.Gateway.csproj" Id="ff0d7775-3875-4a60-b77d-10f81b10d35c" />
   <Project Path="CozyHavenStayV3.HotelService.Tests/CozyHavenStayV3.HotelService.Tests.csproj" Id="03622b04-dfa4-4089-a0d0-1c142f39f669" />
   <Project Path="CozyHavenStayV3.HotelService/CozyHavenStayV3.HotelService.csproj" Id="7340e144-9043-4494-85c4-3bde2d2c7463" />

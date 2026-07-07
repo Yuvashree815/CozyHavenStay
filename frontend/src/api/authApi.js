@@ -23,3 +23,9 @@ export const deactivateUserApi = (id) =>
 
 export const registerAdminApi = (data) =>
   axiosInstance.post('/identity/api/v1/account/register/admin', data);
+
+export const forgotPasswordApi = (data) =>
+  axiosInstance.post('/identity/api/v1/auth/forgot-password', data);
+
+export const resetPasswordApi = (data) =>
+  axiosInstance.post('/identity/api/v1/auth/reset-password', data);

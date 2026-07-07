@@ -11,6 +11,8 @@
         public string Description { get; set; } = string.Empty;
         public int OwnerId { get; set; }
 
+        public string? ImageUrl { get; set; }
+
         public bool HasDining { get; set; }
         public bool HasParking { get; set; }
         public bool HasFreeWifi { get; set; }

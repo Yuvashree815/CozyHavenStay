@@ -1,12 +1,3 @@
-using System.Text;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
-using Microsoft.OpenApi.Models;
-using FluentValidation;
-using log4net;
-using log4net.Config;
 using CozyHavenStayV3.IdentityService.Data;
 using CozyHavenStayV3.IdentityService.Mapping;
 using CozyHavenStayV3.IdentityService.Middleware;
@@ -15,6 +6,16 @@ using CozyHavenStayV3.IdentityService.Repositories.Implementations;
 using CozyHavenStayV3.IdentityService.Repositories.Interfaces;
 using CozyHavenStayV3.IdentityService.Services.Implementations;
 using CozyHavenStayV3.IdentityService.Services.Interfaces;
+using FluentValidation;
+using log4net;
+using log4net.Config;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
+using System.Reflection;
+using System.Text;
 
 namespace CozyHavenStayV3.IdentityService
 {
@@ -25,7 +26,7 @@ namespace CozyHavenStayV3.IdentityService
             var builder = WebApplication.CreateBuilder(args);
 
             //  log4net 
-            var logRepository = LogManager.GetRepository(System.Reflection.Assembly.GetEntryAssembly());
+            var logRepository = LogManager.GetRepository(Assembly.GetEntryAssembly()!);
             XmlConfigurator.Configure(logRepository, new FileInfo("log4net.config"));
 
             //  DbContext
@@ -46,6 +47,9 @@ namespace CozyHavenStayV3.IdentityService
 
             //  FluentValidation 
             builder.Services.AddValidatorsFromAssemblyContaining<Program>();
+
+            //Email Service
+            builder.Services.AddScoped<IEmailService, EmailService>();
 
             // JWT Authentication 
             var jwtSection = builder.Configuration.GetSection("Jwt");

@@ -3,10 +3,12 @@ using CozyHavenStayV3.IdentityService.Models;
 using CozyHavenStayV3.IdentityService.Repositories.Interfaces;
 using CozyHavenStayV3.IdentityService.Services.Implementations;
 using CozyHavenStayV3.IdentityService.Services.Interfaces;
+using CozyHavenStayV3.IdentityService.Data;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Moq;
 using NUnit.Framework;
-using System.Timers;
 
 namespace CozyHavenStayV3.IdentityService.Tests
 {
@@ -15,6 +17,9 @@ namespace CozyHavenStayV3.IdentityService.Tests
     {
         private Mock<IUserRepository> _userRepositoryMock = null!;
         private Mock<ITokenService> _tokenServiceMock = null!;
+        private Mock<IEmailService> _emailServiceMock = null!;
+        private Mock<IConfiguration> _configurationMock = null!;
+        private ApplicationDbContext _dbContext = null!;
         private AuthService _authService = null!;
         private PasswordHasher<User> _passwordHasher = null!;
 
@@ -23,8 +28,29 @@ namespace CozyHavenStayV3.IdentityService.Tests
         {
             _userRepositoryMock = new Mock<IUserRepository>();
             _tokenServiceMock = new Mock<ITokenService>();
-            _authService = new AuthService(_userRepositoryMock.Object, _tokenServiceMock.Object);
+            _emailServiceMock = new Mock<IEmailService>();
+            _configurationMock = new Mock<IConfiguration>();
+
+            // In-memory database for token operations
+            var options = new DbContextOptionsBuilder<ApplicationDbContext>()
+                .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
+                .Options;
+            _dbContext = new ApplicationDbContext(options);
+
+            _authService = new AuthService(
+                _userRepositoryMock.Object,
+                _tokenServiceMock.Object,
+                _emailServiceMock.Object,
+                _dbContext,
+                _configurationMock.Object);
+
             _passwordHasher = new PasswordHasher<User>();
+        }
+
+        [TearDown]
+        public void TearDown()
+        {
+            _dbContext.Dispose();
         }
 
         private User CreateTestUser(string email, string plainPassword, bool isActive = true)
@@ -48,23 +74,23 @@ namespace CozyHavenStayV3.IdentityService.Tests
         [Test]
         public async Task LoginAsync_CorrectCredentials_ReturnsTokenAndProfile()
         {
-            // Arrange
             var user = CreateTestUser("guest@test.com", "Correct@123");
 
             _userRepositoryMock
                 .Setup(r => r.GetByEmailAsync("guest@test.com"))
                 .ReturnsAsync(user);
-
             _tokenServiceMock
                 .Setup(t => t.GenerateAccessToken(user))
                 .Returns(("fake-jwt-token", DateTime.UtcNow.AddHours(1)));
 
-            var request = new LoginRequestDto { Email = "guest@test.com", Password = "Correct@123" };
+            var request = new LoginRequestDto
+            {
+                Email = "guest@test.com",
+                Password = "Correct@123"
+            };
 
-            // Act
             var result = await _authService.LoginAsync(request);
 
-            // Assert
             Assert.That(result.Token, Is.EqualTo("fake-jwt-token"));
             Assert.That(result.Email, Is.EqualTo("guest@test.com"));
             Assert.That(result.Role, Is.EqualTo("User"));
@@ -79,7 +105,11 @@ namespace CozyHavenStayV3.IdentityService.Tests
                 .Setup(r => r.GetByEmailAsync("guest@test.com"))
                 .ReturnsAsync(user);
 
-            var request = new LoginRequestDto { Email = "guest@test.com", Password = "WrongPassword" };
+            var request = new LoginRequestDto
+            {
+                Email = "guest@test.com",
+                Password = "WrongPassword"
+            };
 
             var ex = Assert.ThrowsAsync<UnauthorizedAccessException>(async () =>
                 await _authService.LoginAsync(request));
@@ -90,18 +120,19 @@ namespace CozyHavenStayV3.IdentityService.Tests
         [Test]
         public void LoginAsync_EmailDoesNotExist_ThrowsSameGenericMessageAsWrongPassword()
         {
-            // Arrange
             _userRepositoryMock
                 .Setup(r => r.GetByEmailAsync("nobody@test.com"))
                 .ReturnsAsync((User?)null);
 
-            var request = new LoginRequestDto { Email = "nobody@test.com", Password = "AnyPassword123" };
+            var request = new LoginRequestDto
+            {
+                Email = "nobody@test.com",
+                Password = "AnyPassword123"
+            };
 
-            // Act + Assert
             var ex = Assert.ThrowsAsync<UnauthorizedAccessException>(async () =>
                 await _authService.LoginAsync(request));
 
-            
             Assert.That(ex!.Message, Is.EqualTo("Invalid email or password."));
         }
 
@@ -114,7 +145,11 @@ namespace CozyHavenStayV3.IdentityService.Tests
                 .Setup(r => r.GetByEmailAsync("inactive@test.com"))
                 .ReturnsAsync(user);
 
-            var request = new LoginRequestDto { Email = "inactive@test.com", Password = "Correct@123" };
+            var request = new LoginRequestDto
+            {
+                Email = "inactive@test.com",
+                Password = "Correct@123"
+            };
 
             var ex = Assert.ThrowsAsync<UnauthorizedAccessException>(async () =>
                 await _authService.LoginAsync(request));
@@ -127,12 +162,18 @@ namespace CozyHavenStayV3.IdentityService.Tests
         {
             var user = CreateTestUser("guest@test.com", "Correct@123");
 
-            _userRepositoryMock.Setup(r => r.GetByEmailAsync("guest@test.com")).ReturnsAsync(user);
+            _userRepositoryMock
+                .Setup(r => r.GetByEmailAsync("guest@test.com"))
+                .ReturnsAsync(user);
             _tokenServiceMock
                 .Setup(t => t.GenerateAccessToken(user))
                 .Returns(("token", DateTime.UtcNow.AddHours(1)));
 
-            var request = new LoginRequestDto { Email = "guest@test.com", Password = "Correct@123" };
+            var request = new LoginRequestDto
+            {
+                Email = "guest@test.com",
+                Password = "Correct@123"
+            };
 
             await _authService.LoginAsync(request);
 

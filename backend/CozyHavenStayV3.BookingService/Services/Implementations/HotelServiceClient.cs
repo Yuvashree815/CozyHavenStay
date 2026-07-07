@@ -1,7 +1,8 @@
-﻿using System.Net.Http.Json;
-using log4net;
-using CozyHavenStayV3.BookingService.DTOs.External;
+﻿using CozyHavenStayV3.BookingService.DTOs.External;
 using CozyHavenStayV3.BookingService.Services.Interfaces;
+using log4net;
+//using System.Net.Http.Json;
+    
 
 namespace CozyHavenStayV3.BookingService.Services.Implementations
 {
@@ -92,6 +93,35 @@ namespace CozyHavenStayV3.BookingService.Services.Implementations
             if (!response.IsSuccessStatusCode)
             {
                 Log.Warn($"HotelService release block failed for room {roomId}, booking {bookingId}. Status: {response.StatusCode}");
+            }
+        }
+        public async Task<HotelInfoResponse?> GetHotelDetailsAsync(int hotelId)
+        {
+            try
+            {
+                var response = await _httpClient.GetAsync($"api/v1/hotels/{hotelId}");
+                if (!response.IsSuccessStatusCode) return null;
+                return await response.Content.ReadFromJsonAsync<HotelInfoResponse>();
+            }
+            catch (Exception ex)
+            {
+                Log.Warn($"Failed to get hotel details for hotel {hotelId}: {ex.Message}");
+                return null;
+            }
+        }
+
+        public async Task<RoomInfoResponse?> GetRoomDetailsAsync(int roomId)
+        {
+            try
+            {
+                var response = await _httpClient.GetAsync($"api/v1/rooms/{roomId}");
+                if (!response.IsSuccessStatusCode) return null;
+                return await response.Content.ReadFromJsonAsync<RoomInfoResponse>();
+            }
+            catch (Exception ex)
+            {
+                Log.Warn($"Failed to get room details for room {roomId}: {ex.Message}");
+                return null;
             }
         }
     }

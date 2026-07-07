@@ -8,5 +8,6 @@ namespace CozyHavenStayV3.HotelService.DTOs.Room
         public BedType BedType { get; set; }
         public bool IsAC { get; set; }
         public decimal BaseFare { get; set; }
+        public string? ImageUrl { get; set; }
     }
 }

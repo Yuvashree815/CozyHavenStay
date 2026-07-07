@@ -17,6 +17,7 @@ namespace CozyHavenStayV3.BookingService.Tests
         private Mock<IBookingRepository> _bookingRepositoryMock = null!;
         private Mock<IPaymentService> _paymentServiceMock = null!;
         private Mock<IHotelServiceClient> _hotelServiceClientMock = null!;
+        private Mock<IEmailService> _emailServiceMock = null!;
         private IMapper _mapper = null!;
         private BookingManagementService _bookingService = null!;
 
@@ -26,14 +27,17 @@ namespace CozyHavenStayV3.BookingService.Tests
             _bookingRepositoryMock = new Mock<IBookingRepository>();
             _paymentServiceMock = new Mock<IPaymentService>();
             _hotelServiceClientMock = new Mock<IHotelServiceClient>();
+            _emailServiceMock = new Mock<IEmailService>();
 
-            var config = new MapperConfiguration(cfg => cfg.AddProfile<BookingMappingProfile>());
+            var config = new MapperConfiguration(cfg =>
+                cfg.AddProfile<BookingMappingProfile>());
             _mapper = config.CreateMapper();
 
             _bookingService = new BookingManagementService(
                 _bookingRepositoryMock.Object,
                 _paymentServiceMock.Object,
                 _hotelServiceClientMock.Object,
+                _emailServiceMock.Object,
                 _mapper);
         }
 
@@ -46,85 +50,105 @@ namespace CozyHavenStayV3.BookingService.Tests
             NumberOfAdults = 2,
             NumberOfChildren = 0,
             GuestAges = new List<int> { 30, 28 },
-            PaymentMethod = PaymentMethodDto.UPI
+            PaymentMethod = PaymentMethodDto.UPI,
+            GuestEmail = "test@gmail.com",
+            GuestName = "Test User"
         };
 
         [Test]
         public async Task CancelBookingAsync_MoreThan48HoursBeforeCheckIn_FullRefund()
         {
-            var payment = new Payment { Id = 1, Amount = 5600m, Status = PaymentStatus.Completed };
+            var payment = new Payment
+            {
+                Id = 1,
+                Amount = 5600m,
+                Status = PaymentStatus.Completed
+            };
             var booking = new Booking
             {
                 Id = 1,
                 UserId = 5,
                 HotelId = 1,
                 RoomId = 1,
-                CheckIn = DateTime.UtcNow.AddHours(72), // 72 hours away — full refund
+                CheckIn = DateTime.UtcNow.AddHours(72),
                 CheckOut = DateTime.UtcNow.AddHours(96),
                 TotalFare = 5600m,
                 Status = BookingStatus.Confirmed,
                 Payment = payment
             };
 
-            _bookingRepositoryMock.Setup(r => r.GetByIdWithDetailsAsync(1)).ReturnsAsync(booking);
+            _bookingRepositoryMock
+                .Setup(r => r.GetByIdWithDetailsAsync(1))
+                .ReturnsAsync(booking);
 
             await _bookingService.CancelBookingAsync(1, userId: 5);
 
-            // Verify full refund amount passed
-            _paymentServiceMock.Verify(p => p.MarkRefundPendingAsync(
-                payment, 5600m), Times.Once);
+            _paymentServiceMock.Verify(p =>
+                p.MarkRefundPendingAsync(payment, 5600m), Times.Once);
         }
 
         [Test]
         public async Task CancelBookingAsync_Between24And48HoursBeforeCheckIn_HalfRefund()
         {
-            var payment = new Payment { Id = 1, Amount = 5600m, Status = PaymentStatus.Completed };
+            var payment = new Payment
+            {
+                Id = 1,
+                Amount = 5600m,
+                Status = PaymentStatus.Completed
+            };
             var booking = new Booking
             {
                 Id = 1,
                 UserId = 5,
                 HotelId = 1,
                 RoomId = 1,
-                CheckIn = DateTime.UtcNow.AddHours(36), // 36 hours away — 50% refund
+                CheckIn = DateTime.UtcNow.AddHours(36),
                 CheckOut = DateTime.UtcNow.AddHours(60),
                 TotalFare = 5600m,
                 Status = BookingStatus.Confirmed,
                 Payment = payment
             };
 
-            _bookingRepositoryMock.Setup(r => r.GetByIdWithDetailsAsync(1)).ReturnsAsync(booking);
+            _bookingRepositoryMock
+                .Setup(r => r.GetByIdWithDetailsAsync(1))
+                .ReturnsAsync(booking);
 
             await _bookingService.CancelBookingAsync(1, userId: 5);
 
-            // Verify 50% refund amount passed
-            _paymentServiceMock.Verify(p => p.MarkRefundPendingAsync(
-                payment, 2800m), Times.Once);
+            _paymentServiceMock.Verify(p =>
+                p.MarkRefundPendingAsync(payment, 2800m), Times.Once);
         }
 
         [Test]
         public async Task CancelBookingAsync_LessThan24HoursBeforeCheckIn_NoRefund()
         {
-            var payment = new Payment { Id = 1, Amount = 5600m, Status = PaymentStatus.Completed };
+            var payment = new Payment
+            {
+                Id = 1,
+                Amount = 5600m,
+                Status = PaymentStatus.Completed
+            };
             var booking = new Booking
             {
                 Id = 1,
                 UserId = 5,
                 HotelId = 1,
                 RoomId = 1,
-                CheckIn = DateTime.UtcNow.AddHours(12), // 12 hours away — no refund
+                CheckIn = DateTime.UtcNow.AddHours(12),
                 CheckOut = DateTime.UtcNow.AddHours(36),
                 TotalFare = 5600m,
                 Status = BookingStatus.Confirmed,
                 Payment = payment
             };
 
-            _bookingRepositoryMock.Setup(r => r.GetByIdWithDetailsAsync(1)).ReturnsAsync(booking);
+            _bookingRepositoryMock
+                .Setup(r => r.GetByIdWithDetailsAsync(1))
+                .ReturnsAsync(booking);
 
             await _bookingService.CancelBookingAsync(1, userId: 5);
 
-            // Verify zero refund amount passed
-            _paymentServiceMock.Verify(p => p.MarkRefundPendingAsync(
-                payment, 0m), Times.Once);
+            _paymentServiceMock.Verify(p =>
+                p.MarkRefundPendingAsync(payment, 0m), Times.Once);
         }
 
         [Test]
@@ -132,7 +156,8 @@ namespace CozyHavenStayV3.BookingService.Tests
         {
             // Arrange
             _hotelServiceClientMock
-                .Setup(c => c.CheckAvailabilityAsync(1, It.IsAny<DateTime>(), It.IsAny<DateTime>()))
+                .Setup(c => c.CheckAvailabilityAsync(
+                    1, It.IsAny<DateTime>(), It.IsAny<DateTime>()))
                 .ReturnsAsync(true);
 
             _hotelServiceClientMock
@@ -149,8 +174,15 @@ namespace CozyHavenStayV3.BookingService.Tests
                 });
 
             _paymentServiceMock
-                .Setup(p => p.ProcessPaymentAsync(It.IsAny<int>(), 3000m, PaymentMethod.UPI))
-                .ReturnsAsync(new Payment { Id = 1, BookingId = 1, Amount = 3000m, Status = PaymentStatus.Completed });
+                .Setup(p => p.ProcessPaymentAsync(
+                    It.IsAny<int>(), 3000m, PaymentMethod.UPI))
+                .ReturnsAsync(new Payment
+                {
+                    Id = 1,
+                    BookingId = 1,
+                    Amount = 3000m,
+                    Status = PaymentStatus.Completed
+                });
 
             _bookingRepositoryMock
                 .Setup(r => r.GetByIdWithDetailsAsync(It.IsAny<int>()))
@@ -166,62 +198,91 @@ namespace CozyHavenStayV3.BookingService.Tests
                     Payment = new Payment { Status = PaymentStatus.Completed }
                 });
 
+            // Mock hotel and room details for email (fire and forget)
+            _hotelServiceClientMock
+                .Setup(c => c.GetHotelDetailsAsync(It.IsAny<int>()))
+                .ReturnsAsync(new HotelInfoResponse
+                {
+                    Id = 1,
+                    Name = "Test Hotel",
+                    Location = "Chennai"
+                });
+
+            _hotelServiceClientMock
+                .Setup(c => c.GetRoomDetailsAsync(It.IsAny<int>()))
+                .ReturnsAsync(new RoomInfoResponse
+                {
+                    Id = 1,
+                    BedType = "Double"
+                });
+
+            // Mock email service
+            _emailServiceMock
+                .Setup(e => e.SendBookingConfirmationAsync(
+                    It.IsAny<string>(), It.IsAny<BookingConfirmationData>()))
+                .Returns(Task.CompletedTask);
+
             // Act
             var result = await _bookingService.CreateBookingAsync(10, ValidBookingDto());
 
             // Assert
             Assert.That(result.Status, Is.EqualTo(BookingStatus.Confirmed));
 
-            
             _hotelServiceClientMock.Verify(c => c.BlockRoomForBookingAsync(
-                1, It.IsAny<DateTime>(), It.IsAny<DateTime>(), It.IsAny<int>()), Times.Once);
+                1, It.IsAny<DateTime>(), It.IsAny<DateTime>(),
+                It.IsAny<int>()), Times.Once);
 
-            
             _bookingRepositoryMock.Verify(r => r.UpdateAsync(
-                It.Is<Booking>(b => b.Status == BookingStatus.Confirmed)), Times.AtLeastOnce);
+                It.Is<Booking>(b => b.Status == BookingStatus.Confirmed)),
+                Times.AtLeastOnce);
         }
 
         [Test]
         public void CreateBookingAsync_RoomNotAvailable_ThrowsAndNeverChargesPayment()
         {
-            // Arrange
             _hotelServiceClientMock
-                .Setup(c => c.CheckAvailabilityAsync(1, It.IsAny<DateTime>(), It.IsAny<DateTime>()))
+                .Setup(c => c.CheckAvailabilityAsync(
+                    1, It.IsAny<DateTime>(), It.IsAny<DateTime>()))
                 .ReturnsAsync(false);
 
-            // Act + Assert
             Assert.ThrowsAsync<InvalidOperationException>(async () =>
                 await _bookingService.CreateBookingAsync(10, ValidBookingDto()));
 
-            
             _paymentServiceMock.Verify(p => p.ProcessPaymentAsync(
-                It.IsAny<int>(), It.IsAny<decimal>(), It.IsAny<PaymentMethod>()), Times.Never);
+                It.IsAny<int>(), It.IsAny<decimal>(),
+                It.IsAny<PaymentMethod>()), Times.Never);
         }
 
         [Test]
         public void CreateBookingAsync_ExceedsMaxOccupancy_ThrowsBeforePayment()
         {
             _hotelServiceClientMock
-                .Setup(c => c.CheckAvailabilityAsync(1, It.IsAny<DateTime>(), It.IsAny<DateTime>()))
+                .Setup(c => c.CheckAvailabilityAsync(
+                    1, It.IsAny<DateTime>(), It.IsAny<DateTime>()))
                 .ReturnsAsync(true);
 
             _hotelServiceClientMock
                 .Setup(c => c.CalculateFareAsync(1, It.IsAny<FareCalculationRequest>()))
-                .ReturnsAsync(new FareCalculationResponse { ExceedsMaxOccupancy = true, TotalFare = 0m });
+                .ReturnsAsync(new FareCalculationResponse
+                {
+                    ExceedsMaxOccupancy = true,
+                    TotalFare = 0m
+                });
 
             Assert.ThrowsAsync<InvalidOperationException>(async () =>
                 await _bookingService.CreateBookingAsync(10, ValidBookingDto()));
 
             _paymentServiceMock.Verify(p => p.ProcessPaymentAsync(
-                It.IsAny<int>(), It.IsAny<decimal>(), It.IsAny<PaymentMethod>()), Times.Never);
+                It.IsAny<int>(), It.IsAny<decimal>(),
+                It.IsAny<PaymentMethod>()), Times.Never);
         }
 
         [Test]
         public async Task CreateBookingAsync_RoomBlockFailsAfterPayment_RollsBackToCancelledAndRefundPending()
         {
-            // Arrange
             _hotelServiceClientMock
-                .Setup(c => c.CheckAvailabilityAsync(1, It.IsAny<DateTime>(), It.IsAny<DateTime>()))
+                .Setup(c => c.CheckAvailabilityAsync(
+                    1, It.IsAny<DateTime>(), It.IsAny<DateTime>()))
                 .ReturnsAsync(true);
 
             _hotelServiceClientMock
@@ -234,28 +295,34 @@ namespace CozyHavenStayV3.BookingService.Tests
                     ExceedsMaxOccupancy = false
                 });
 
-            var processedPayment = new Payment { Id = 1, BookingId = 1, Amount = 3000m, Status = PaymentStatus.Completed };
+            var processedPayment = new Payment
+            {
+                Id = 1,
+                BookingId = 1,
+                Amount = 3000m,
+                Status = PaymentStatus.Completed
+            };
             _paymentServiceMock
-                .Setup(p => p.ProcessPaymentAsync(It.IsAny<int>(), 3000m, PaymentMethod.UPI))
+                .Setup(p => p.ProcessPaymentAsync(
+                    It.IsAny<int>(), 3000m, PaymentMethod.UPI))
                 .ReturnsAsync(processedPayment);
 
-          
             _hotelServiceClientMock
-                .Setup(c => c.BlockRoomForBookingAsync(1, It.IsAny<DateTime>(), It.IsAny<DateTime>(), It.IsAny<int>()))
+                .Setup(c => c.BlockRoomForBookingAsync(
+                    1, It.IsAny<DateTime>(), It.IsAny<DateTime>(), It.IsAny<int>()))
                 .ThrowsAsync(new InvalidOperationException("HotelService unreachable"));
 
-            // Act + Assert
             var ex = Assert.ThrowsAsync<InvalidOperationException>(async () =>
                 await _bookingService.CreateBookingAsync(10, ValidBookingDto()));
 
-            Assert.That(ex!.Message, Is.EqualTo("Unable to confirm your room. Your payment will be refunded."));
+            Assert.That(ex!.Message,
+                Is.EqualTo("Unable to confirm your room. Your payment will be refunded."));
 
-            
             _bookingRepositoryMock.Verify(r => r.UpdateAsync(
                 It.Is<Booking>(b => b.Status == BookingStatus.Cancelled)), Times.Once);
 
-
-            _paymentServiceMock.Verify(p => p.MarkRefundPendingAsync(processedPayment, 3000m), Times.Once);
+            _paymentServiceMock.Verify(p =>
+                p.MarkRefundPendingAsync(processedPayment, 3000m), Times.Once);
         }
 
         [Test]
@@ -271,9 +338,10 @@ namespace CozyHavenStayV3.BookingService.Tests
                 Payment = new Payment { Status = PaymentStatus.Completed }
             };
 
-            _bookingRepositoryMock.Setup(r => r.GetByIdWithDetailsAsync(1)).ReturnsAsync(booking);
+            _bookingRepositoryMock
+                .Setup(r => r.GetByIdWithDetailsAsync(1))
+                .ReturnsAsync(booking);
 
-            
             Assert.ThrowsAsync<UnauthorizedAccessException>(async () =>
                 await _bookingService.CancelBookingAsync(1, userId: 99));
 
@@ -291,22 +359,24 @@ namespace CozyHavenStayV3.BookingService.Tests
                 UserId = 5,
                 HotelId = 1,
                 RoomId = 1,
-                CheckIn = DateTime.UtcNow.AddHours(72), // 72 hours away — full refund
+                CheckIn = DateTime.UtcNow.AddHours(72),
                 CheckOut = DateTime.UtcNow.AddHours(96),
                 TotalFare = 5600m,
                 Status = BookingStatus.Confirmed,
                 Payment = payment
             };
 
-            _bookingRepositoryMock.Setup(r => r.GetByIdWithDetailsAsync(1)).ReturnsAsync(booking);
+            _bookingRepositoryMock
+                .Setup(r => r.GetByIdWithDetailsAsync(1))
+                .ReturnsAsync(booking);
 
             await _bookingService.CancelBookingAsync(1, userId: 5);
 
             Assert.That(booking.Status, Is.EqualTo(BookingStatus.Cancelled));
-
-            // Full refund since CheckIn is 72 hours away
-            _paymentServiceMock.Verify(p => p.MarkRefundPendingAsync(payment, 5600m), Times.Once);
-            _hotelServiceClientMock.Verify(c => c.ReleaseBookingBlockAsync(1, 1), Times.Once);
+            _paymentServiceMock.Verify(p =>
+                p.MarkRefundPendingAsync(payment, 5600m), Times.Once);
+            _hotelServiceClientMock.Verify(c =>
+                c.ReleaseBookingBlockAsync(1, 1), Times.Once);
         }
 
         [Test]
@@ -322,7 +392,9 @@ namespace CozyHavenStayV3.BookingService.Tests
                 Payment = new Payment()
             };
 
-            _bookingRepositoryMock.Setup(r => r.GetByIdWithDetailsAsync(1)).ReturnsAsync(booking);
+            _bookingRepositoryMock
+                .Setup(r => r.GetByIdWithDetailsAsync(1))
+                .ReturnsAsync(booking);
 
             Assert.ThrowsAsync<InvalidOperationException>(async () =>
                 await _bookingService.CancelBookingAsync(1, userId: 5));
@@ -446,19 +518,23 @@ namespace CozyHavenStayV3.BookingService.Tests
                 Payment = new Payment { Status = PaymentStatus.RefundPending }
             };
 
-            _bookingRepositoryMock.Setup(r => r.GetByIdWithDetailsAsync(1)).ReturnsAsync(booking);
-            _hotelServiceClientMock.Setup(c => c.IsHotelOwnedByAsync(1, 99)).ReturnsAsync(false);
+            _bookingRepositoryMock
+                .Setup(r => r.GetByIdWithDetailsAsync(1))
+                .ReturnsAsync(booking);
+            _hotelServiceClientMock
+                .Setup(c => c.IsHotelOwnedByAsync(1, 99))
+                .ReturnsAsync(false);
 
             Assert.ThrowsAsync<UnauthorizedAccessException>(async () =>
                 await _bookingService.ApproveRefundAsync(1, ownerId: 99));
 
-            _paymentServiceMock.Verify(p => p.ApproveRefundAsync(It.IsAny<int>()), Times.Never);
+            _paymentServiceMock.Verify(p =>
+                p.ApproveRefundAsync(It.IsAny<int>()), Times.Never);
         }
 
         [Test]
         public async Task VerifyCompletedStayAsync_CheckOutInFuture_ReturnsFalse()
         {
-            // Booking is Confirmed but checkout hasn't happened yet
             var booking = new Booking
             {
                 Id = 1,
@@ -466,7 +542,7 @@ namespace CozyHavenStayV3.BookingService.Tests
                 HotelId = 1,
                 RoomId = 1,
                 CheckIn = DateTime.UtcNow.AddDays(-3),
-                CheckOut = DateTime.UtcNow.AddDays(1), // still in the future
+                CheckOut = DateTime.UtcNow.AddDays(1),
                 Status = BookingStatus.Confirmed
             };
 
@@ -474,16 +550,15 @@ namespace CozyHavenStayV3.BookingService.Tests
                 .Setup(r => r.GetByIdAsync(1))
                 .ReturnsAsync(booking);
 
-            var result = await _bookingService.VerifyCompletedStayAsync(1, userId: 5, hotelId: 1);
+            var result = await _bookingService
+                .VerifyCompletedStayAsync(1, userId: 5, hotelId: 1);
 
-            // Should return false — guest hasn't checked out yet
             Assert.That(result, Is.False);
         }
 
         [Test]
         public async Task VerifyCompletedStayAsync_CheckOutInPast_ReturnsTrue()
         {
-            // Booking is Confirmed and checkout has already passed
             var booking = new Booking
             {
                 Id = 1,
@@ -491,7 +566,7 @@ namespace CozyHavenStayV3.BookingService.Tests
                 HotelId = 1,
                 RoomId = 1,
                 CheckIn = DateTime.UtcNow.AddDays(-5),
-                CheckOut = DateTime.UtcNow.AddDays(-1), // yesterday — stay is complete
+                CheckOut = DateTime.UtcNow.AddDays(-1),
                 Status = BookingStatus.Confirmed
             };
 
@@ -499,9 +574,9 @@ namespace CozyHavenStayV3.BookingService.Tests
                 .Setup(r => r.GetByIdAsync(1))
                 .ReturnsAsync(booking);
 
-            var result = await _bookingService.VerifyCompletedStayAsync(1, userId: 5, hotelId: 1);
+            var result = await _bookingService
+                .VerifyCompletedStayAsync(1, userId: 5, hotelId: 1);
 
-            // Should return true — stay is genuinely complete
             Assert.That(result, Is.True);
         }
     }

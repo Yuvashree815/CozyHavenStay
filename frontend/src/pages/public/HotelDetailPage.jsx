@@ -74,9 +74,7 @@ const HotelDetailPage = () => {
     const stars = [];
     for (let i = 0; i < 5; i++) {
       stars.push(
-        <span key={i} style={{ color: i < full ? 'var(--accent)' : '#ddd' }}>
-          ★
-        </span>
+        <span key={i} style={{ color: i < full ? 'var(--accent)' : '#ddd' }}>★</span>
       );
     }
     return stars;
@@ -88,7 +86,9 @@ const HotelDetailPage = () => {
 
   if (loading) return (
     <div>
-      <div className="skeleton" style={{ height: 280, borderRadius: 'var(--radius-lg)', marginBottom: '1.5rem' }} />
+      <div className="skeleton" style={{
+        height: 280, borderRadius: 'var(--radius-lg)', marginBottom: '1.5rem'
+      }} />
       <div className="row">
         <div className="col-md-8">
           <div className="skeleton" style={{ height: 24, width: '60%', marginBottom: 12 }} />
@@ -117,39 +117,64 @@ const HotelDetailPage = () => {
         ← Back to Results
       </button>
 
-      {/* Hero banner */}
+      {/* Hero banner — shows real image if available */}
       <div style={{
-        background: 'linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%)',
         borderRadius: 'var(--radius-lg)',
-        padding: '2.5rem',
-        color: 'white',
         marginBottom: '1.5rem',
         position: 'relative',
-        overflow: 'hidden'
+        overflow: 'hidden',
+        minHeight: 280,
+        background: 'linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%)',
       }}>
-        {/* Decorative circle */}
+        {/* Real hotel image */}
+        {hotel.imageUrl && (
+          <img
+            src={hotel.imageUrl}
+            alt={hotel.name}
+            style={{
+              width: '100%', height: 280,
+              objectFit: 'cover',
+              display: 'block',
+              position: 'absolute',
+              top: 0, left: 0
+            }}
+            onError={(e) => { e.target.style.display = 'none'; }}
+          />
+        )}
+
+        {/* Dark overlay for text readability */}
         <div style={{
-          position: 'absolute',
-          top: '-40%',
-          right: '-5%',
-          width: 300,
-          height: 300,
-          background: 'radial-gradient(circle, rgba(201,168,76,0.2) 0%, transparent 70%)',
-          borderRadius: '50%'
+          position: 'absolute', inset: 0,
+          background: hotel.imageUrl
+            ? 'linear-gradient(to bottom, rgba(26,60,94,0.2), rgba(26,60,94,0.85))'
+            : 'transparent',
+          borderRadius: 'var(--radius-lg)'
         }} />
 
-        <div style={{ position: 'relative', zIndex: 1 }}>
-          <div className="d-flex justify-content-between align-items-start flex-wrap gap-3">
+        {/* Decorative circle — only when no image */}
+        {!hotel.imageUrl && (
+          <div style={{
+            position: 'absolute', top: '-40%', right: '-5%',
+            width: 300, height: 300,
+            background: 'radial-gradient(circle, rgba(201,168,76,0.2) 0%, transparent 70%)',
+            borderRadius: '50%'
+          }} />
+        )}
+
+        {/* Content overlay */}
+        <div style={{
+          position: 'absolute', bottom: 0, left: 0, right: 0,
+          padding: '2rem 2.5rem', zIndex: 1
+        }}>
+          <div className="d-flex justify-content-between align-items-end flex-wrap gap-3">
             <div>
               <h2 style={{
-                color: 'white',
-                fontFamily: 'Playfair Display, serif',
-                fontSize: '2rem',
-                marginBottom: '0.5rem'
+                color: 'white', fontFamily: 'Playfair Display, serif',
+                fontSize: '2rem', marginBottom: '0.5rem'
               }}>
                 {hotel.name}
               </h2>
-              <p style={{ color: 'rgba(255,255,255,0.8)', marginBottom: '0.75rem' }}>
+              <p style={{ color: 'rgba(255,255,255,0.85)', marginBottom: '0.75rem' }}>
                 📍 {hotel.location}
               </p>
               {ratingSummary && ratingSummary.totalReviews > 0 && (
@@ -158,46 +183,41 @@ const HotelDetailPage = () => {
                     {renderStars(ratingSummary.averageRating)}
                   </div>
                   <span style={{
-                    background: 'var(--accent)',
-                    color: 'var(--primary)',
-                    fontWeight: 700,
-                    padding: '0.2rem 0.6rem',
-                    borderRadius: '6px',
-                    fontSize: '0.9rem'
+                    background: 'var(--accent)', color: 'var(--primary)',
+                    fontWeight: 700, padding: '0.2rem 0.6rem',
+                    borderRadius: '6px', fontSize: '0.9rem'
                   }}>
                     {ratingSummary.averageRating}
                   </span>
-                  <span style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.85rem' }}>
+                  <span style={{ color: 'rgba(255,255,255,0.8)', fontSize: '0.85rem' }}>
                     ({ratingSummary.totalReviews} reviews)
                   </span>
                 </div>
               )}
             </div>
-            <div style={{
-              background: 'rgba(255,255,255,0.15)',
-              borderRadius: 'var(--radius-md)',
-              padding: '1rem 1.5rem',
-              textAlign: 'center',
-              backdropFilter: 'blur(10px)'
-            }}>
-              <div style={{ fontSize: '2rem' }}>🏨</div>
+
+            {/* Premium badge — only when no image */}
+            {!hotel.imageUrl && (
               <div style={{
-                color: 'var(--accent)',
-                fontWeight: 700,
-                fontSize: '0.85rem'
+                background: 'rgba(255,255,255,0.15)',
+                borderRadius: 'var(--radius-md)',
+                padding: '1rem 1.5rem', textAlign: 'center',
+                backdropFilter: 'blur(10px)'
               }}>
-                Premium Hotel
+                <div style={{ fontSize: '2rem' }}>🏨</div>
+                <div style={{
+                  color: 'var(--accent)', fontWeight: 700, fontSize: '0.85rem'
+                }}>
+                  Premium Hotel
+                </div>
               </div>
-            </div>
+            )}
           </div>
 
           {hotel.description && (
             <p style={{
-              color: 'rgba(255,255,255,0.75)',
-              marginTop: '1rem',
-              marginBottom: 0,
-              maxWidth: '600px',
-              fontSize: '0.95rem'
+              color: 'rgba(255,255,255,0.8)', marginTop: '1rem',
+              marginBottom: 0, maxWidth: '600px', fontSize: '0.95rem'
             }}>
               {hotel.description}
             </p>
@@ -216,9 +236,7 @@ const HotelDetailPage = () => {
                 {getAmenities(hotel).map(({ icon, label }) => (
                   <div className="col-6 col-md-4 mb-3" key={label}>
                     <div style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.5rem',
+                      display: 'flex', alignItems: 'center', gap: '0.5rem',
                       padding: '0.6rem 0.75rem',
                       background: 'var(--surface-warm)',
                       borderRadius: 'var(--radius-sm)',
@@ -226,8 +244,7 @@ const HotelDetailPage = () => {
                     }}>
                       <span style={{ fontSize: '1.2rem' }}>{icon}</span>
                       <span style={{
-                        fontSize: '0.85rem',
-                        fontWeight: 500,
+                        fontSize: '0.85rem', fontWeight: 500,
                         color: 'var(--text-primary)'
                       }}>
                         {label}
@@ -253,12 +270,9 @@ const HotelDetailPage = () => {
                 </h5>
                 {availableCount > 0 && (
                   <span style={{
-                    background: '#d4edda',
-                    color: 'var(--success)',
-                    fontSize: '0.8rem',
-                    padding: '0.2rem 0.6rem',
-                    borderRadius: '20px',
-                    fontWeight: 600
+                    background: '#d4edda', color: 'var(--success)',
+                    fontSize: '0.8rem', padding: '0.2rem 0.6rem',
+                    borderRadius: '20px', fontWeight: 600
                   }}>
                     ✓ For {nights} night{nights > 1 ? 's' : ''}
                   </span>
@@ -269,26 +283,36 @@ const HotelDetailPage = () => {
                 {rooms.map((room) => (
                   <div className="col-md-6 mb-3" key={room.id}>
                     <div className={`room-card ${room.isAvailable ? 'available' : 'unavailable'}`}>
+                      {/* Room image if available */}
+                      {room.imageUrl && (
+                        <div style={{ height: 140, overflow: 'hidden' }}>
+                          <img
+                            src={room.imageUrl}
+                            alt={`${room.bedType} room`}
+                            style={{
+                              width: '100%', height: '100%',
+                              objectFit: 'cover'
+                            }}
+                            onError={(e) => { e.target.parentElement.style.display = 'none'; }}
+                          />
+                        </div>
+                      )}
+
                       <div className="room-card-header">
                         <div>
                           <span style={{ fontWeight: 600, fontSize: '0.95rem' }}>
                             🛏️ {room.bedType} Bed Room
                           </span>
                           <br />
-                          <span style={{
-                            fontSize: '0.8rem',
-                            color: 'var(--text-secondary)'
-                          }}>
+                          <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
                             {room.roomSize} · Max {room.maxOccupancy} guests
                           </span>
                         </div>
                         <span style={{
                           background: room.isAvailable ? '#d4edda' : '#f8d7da',
                           color: room.isAvailable ? 'var(--success)' : 'var(--danger)',
-                          fontSize: '0.75rem',
-                          padding: '0.25rem 0.6rem',
-                          borderRadius: '20px',
-                          fontWeight: 600,
+                          fontSize: '0.75rem', padding: '0.25rem 0.6rem',
+                          borderRadius: '20px', fontWeight: 600,
                           border: `1px solid ${room.isAvailable ? '#c3e6cb' : '#f5c6cb'}`
                         }}>
                           {room.isAvailable ? '✓ Available' : '✗ Booked'}
@@ -312,7 +336,6 @@ const HotelDetailPage = () => {
                             </div>
                             <div className="room-price-label">per night + taxes</div>
                           </div>
-
                           {room.isAvailable && (
                             <button
                               className="btn btn-primary"
@@ -346,11 +369,9 @@ const HotelDetailPage = () => {
                 {ratingSummary && ratingSummary.totalReviews > 0 && (
                   <div style={{ textAlign: 'right' }}>
                     <div style={{
-                      fontSize: '2rem',
-                      fontWeight: 700,
+                      fontSize: '2rem', fontWeight: 700,
                       color: 'var(--primary)',
-                      fontFamily: 'Playfair Display, serif',
-                      lineHeight: 1
+                      fontFamily: 'Playfair Display, serif', lineHeight: 1
                     }}>
                       {ratingSummary.averageRating}
                     </div>
@@ -363,8 +384,7 @@ const HotelDetailPage = () => {
 
               {reviews.length === 0 ? (
                 <div style={{
-                  textAlign: 'center',
-                  padding: '2rem',
+                  textAlign: 'center', padding: '2rem',
                   color: 'var(--text-secondary)'
                 }}>
                   <div style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>💬</div>
@@ -376,16 +396,11 @@ const HotelDetailPage = () => {
                     <div className="d-flex justify-content-between align-items-start mb-1">
                       <div className="d-flex align-items-center gap-2">
                         <div style={{
-                          width: 36,
-                          height: 36,
-                          borderRadius: '50%',
-                          background: 'var(--primary)',
-                          color: 'white',
-                          display: 'flex',
-                          alignItems: 'center',
+                          width: 36, height: 36, borderRadius: '50%',
+                          background: 'var(--primary)', color: 'white',
+                          display: 'flex', alignItems: 'center',
                           justifyContent: 'center',
-                          fontSize: '0.85rem',
-                          fontWeight: 700
+                          fontSize: '0.85rem', fontWeight: 700
                         }}>
                           G
                         </div>
@@ -424,10 +439,7 @@ const HotelDetailPage = () => {
 
         {/* Right column — sticky availability checker */}
         <div className="col-lg-4">
-          <div style={{
-            position: 'sticky',
-            top: '80px'
-          }}>
+          <div style={{ position: 'sticky', top: '80px' }}>
             <div className="cozy-card">
               <div className="cozy-card-header">
                 <h6 style={{ margin: 0, fontWeight: 600 }}>
@@ -437,23 +449,15 @@ const HotelDetailPage = () => {
               <div style={{ padding: '1.25rem' }}>
                 <div className="mb-3">
                   <label className="form-label">Check-in</label>
-                  <input
-                    type="date"
-                    className="form-control"
-                    value={checkIn}
-                    min={today}
-                    onChange={(e) => setCheckIn(e.target.value)}
-                  />
+                  <input type="date" className="form-control"
+                    value={checkIn} min={today}
+                    onChange={(e) => setCheckIn(e.target.value)} />
                 </div>
                 <div className="mb-3">
                   <label className="form-label">Check-out</label>
-                  <input
-                    type="date"
-                    className="form-control"
-                    value={checkOut}
-                    min={checkIn}
-                    onChange={(e) => setCheckOut(e.target.value)}
-                  />
+                  <input type="date" className="form-control"
+                    value={checkOut} min={checkIn}
+                    onChange={(e) => setCheckOut(e.target.value)} />
                 </div>
 
                 {nights > 0 && (
@@ -461,12 +465,9 @@ const HotelDetailPage = () => {
                     background: 'var(--surface-warm)',
                     border: '1px solid var(--border)',
                     borderRadius: 'var(--radius-sm)',
-                    padding: '0.6rem 0.75rem',
-                    marginBottom: '1rem',
-                    fontSize: '0.85rem',
-                    color: 'var(--text-secondary)',
-                    display: 'flex',
-                    justifyContent: 'space-between'
+                    padding: '0.6rem 0.75rem', marginBottom: '1rem',
+                    fontSize: '0.85rem', color: 'var(--text-secondary)',
+                    display: 'flex', justifyContent: 'space-between'
                   }}>
                     <span>Duration</span>
                     <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
@@ -480,20 +481,15 @@ const HotelDetailPage = () => {
                   onClick={handleCheckAvailability}
                   disabled={checkingAvailability}
                 >
-                  {checkingAvailability
-                    ? 'Checking...'
-                    : '🔍 Check Availability'}
+                  {checkingAvailability ? 'Checking...' : '🔍 Check Availability'}
                 </button>
 
                 {availabilityChecked && (
                   <div style={{
-                    marginTop: '1rem',
-                    padding: '0.75rem',
+                    marginTop: '1rem', padding: '0.75rem',
                     background: availableCount > 0 ? '#d4edda' : '#f8d7da',
-                    borderRadius: 'var(--radius-sm)',
-                    textAlign: 'center',
-                    fontSize: '0.9rem',
-                    fontWeight: 600,
+                    borderRadius: 'var(--radius-sm)', textAlign: 'center',
+                    fontSize: '0.9rem', fontWeight: 600,
                     color: availableCount > 0 ? 'var(--success)' : 'var(--danger)'
                   }}>
                     {availableCount > 0
@@ -507,11 +503,7 @@ const HotelDetailPage = () => {
             {/* Cancellation policy */}
             <div className="cozy-card mt-3">
               <div style={{ padding: '1.25rem' }}>
-                <h6 style={{
-                  fontWeight: 600,
-                  marginBottom: '0.75rem',
-                  color: 'var(--text-primary)'
-                }}>
+                <h6 style={{ fontWeight: 600, marginBottom: '0.75rem' }}>
                   🛡️ Cancellation Policy
                 </h6>
                 {[
@@ -520,11 +512,8 @@ const HotelDetailPage = () => {
                   { icon: '❌', text: 'No refund within 24 hours of check-in' },
                 ].map(({ icon, text }) => (
                   <div key={text} style={{
-                    display: 'flex',
-                    gap: '0.5rem',
-                    marginBottom: '0.5rem',
-                    fontSize: '0.82rem',
-                    color: 'var(--text-secondary)'
+                    display: 'flex', gap: '0.5rem', marginBottom: '0.5rem',
+                    fontSize: '0.82rem', color: 'var(--text-secondary)'
                   }}>
                     <span>{icon}</span>
                     <span>{text}</span>

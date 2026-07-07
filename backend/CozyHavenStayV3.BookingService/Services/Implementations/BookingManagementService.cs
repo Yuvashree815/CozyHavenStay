@@ -6,6 +6,7 @@ using CozyHavenStayV3.BookingService.DTOs.External;
 using CozyHavenStayV3.BookingService.Models;
 using CozyHavenStayV3.BookingService.Repositories.Interfaces;
 using CozyHavenStayV3.BookingService.Services.Interfaces;
+using CozyHavenStayV3.BookingService.Services.Implementations;
 
 namespace CozyHavenStayV3.BookingService.Services.Implementations
 {
@@ -14,6 +15,7 @@ namespace CozyHavenStayV3.BookingService.Services.Implementations
         private readonly IBookingRepository _bookingRepository;
         private readonly IPaymentService _paymentService;
         private readonly IHotelServiceClient _hotelServiceClient;
+        private readonly IEmailService _emailService;
         private readonly IMapper _mapper;
         private static readonly ILog Log = LogManager.GetLogger(typeof(BookingManagementService));
 
@@ -21,24 +23,24 @@ namespace CozyHavenStayV3.BookingService.Services.Implementations
             IBookingRepository bookingRepository,
             IPaymentService paymentService,
             IHotelServiceClient hotelServiceClient,
+            IEmailService emailService,
             IMapper mapper)
         {
             _bookingRepository = bookingRepository;
             _paymentService = paymentService;
             _hotelServiceClient = hotelServiceClient;
+            _emailService = emailService;
             _mapper = mapper;
         }
 
         public async Task<BookingDto> CreateBookingAsync(int userId, CreateBookingDto dto)
         {
-           
-            var isAvailable = await _hotelServiceClient.CheckAvailabilityAsync(dto.RoomId, dto.CheckIn, dto.CheckOut);
+            var isAvailable = await _hotelServiceClient.CheckAvailabilityAsync(
+                dto.RoomId, dto.CheckIn, dto.CheckOut);
             if (!isAvailable)
-            {
-                throw new InvalidOperationException("This room is not available for the selected dates.");
-            }
+                throw new InvalidOperationException(
+                    "This room is not available for the selected dates.");
 
-            
             var fareRequest = new FareCalculationRequest
             {
                 CheckIn = dto.CheckIn,
@@ -50,11 +52,9 @@ namespace CozyHavenStayV3.BookingService.Services.Implementations
             var fare = await _hotelServiceClient.CalculateFareAsync(dto.RoomId, fareRequest);
 
             if (fare.ExceedsMaxOccupancy)
-            {
-                throw new InvalidOperationException("The number of guests exceeds this room's maximum occupancy.");
-            }
+                throw new InvalidOperationException(
+                    "The number of guests exceeds this room's maximum occupancy.");
 
-            
             var booking = new Booking
             {
                 UserId = userId,
@@ -69,39 +69,77 @@ namespace CozyHavenStayV3.BookingService.Services.Implementations
                 TotalFare = fare.TotalFare,
                 Status = BookingStatus.Pending,
                 CreatedAt = DateTime.UtcNow,
-                Guests = dto.GuestAges.Select(age => new BookingGuest { Age = age }).ToList()
+                Guests = dto.GuestAges
+                    .Select(age => new BookingGuest { Age = age }).ToList()
             };
 
             await _bookingRepository.AddAsync(booking);
             Log.Info($"Booking {booking.Id} created (Pending) for user {userId}, room {dto.RoomId}.");
 
-            
-            var payment = await _paymentService.ProcessPaymentAsync(booking.Id, fare.TotalFare, (PaymentMethod)dto.PaymentMethod);
+            var payment = await _paymentService.ProcessPaymentAsync(
+                booking.Id, fare.TotalFare, (PaymentMethod)dto.PaymentMethod);
 
-            
             try
             {
-                await _hotelServiceClient.BlockRoomForBookingAsync(dto.RoomId, dto.CheckIn, dto.CheckOut, booking.Id);
+                await _hotelServiceClient.BlockRoomForBookingAsync(
+                    dto.RoomId, dto.CheckIn, dto.CheckOut, booking.Id);
             }
             catch (Exception ex)
             {
-                Log.Error($"Room blocking failed for booking {booking.Id} after payment. Marking booking as Cancelled.", ex);
+                Log.Error($"Room blocking failed for booking {booking.Id}. Rolling back.", ex);
                 booking.Status = BookingStatus.Cancelled;
                 await _bookingRepository.UpdateAsync(booking);
-
-                // Full refund for saga rollback — this is our fault, not the guest's
                 await _paymentService.MarkRefundPendingAsync(payment, payment.Amount);
-
-                throw new InvalidOperationException("Unable to confirm your room. Your payment will be refunded.");
+                throw new InvalidOperationException(
+                    "Unable to confirm your room. Your payment will be refunded.");
             }
-
 
             booking.Status = BookingStatus.Confirmed;
             await _bookingRepository.UpdateAsync(booking);
             Log.Info($"Booking {booking.Id} confirmed for user {userId}.");
 
+            // Send confirmation email — fire and forget
+            if (!string.IsNullOrEmpty(dto.GuestEmail))
+            {
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        var hotelInfo = await _hotelServiceClient
+                            .GetHotelDetailsAsync(dto.HotelId);
+                        var roomInfo = await _hotelServiceClient
+                            .GetRoomDetailsAsync(dto.RoomId);
+
+                        await _emailService.SendBookingConfirmationAsync(
+                            dto.GuestEmail,
+                            new BookingConfirmationData
+                            {
+                                BookingId = booking.Id,
+                                GuestName = dto.GuestName,
+                                HotelName = hotelInfo?.Name ?? $"Hotel #{dto.HotelId}",
+                                HotelLocation = hotelInfo?.Location ?? "",
+                                CheckIn = booking.CheckIn,
+                                CheckOut = booking.CheckOut,
+                                NumberOfAdults = booking.NumberOfAdults,
+                                NumberOfChildren = booking.NumberOfChildren,
+                                TotalFare = booking.TotalFare,
+                                PaymentMethod = dto.PaymentMethod.ToString(),
+                                RoomType = roomInfo?.BedType ?? "Standard"
+                            });
+
+                        Log.Info($"Booking confirmation email sent to {dto.GuestEmail} " +
+                                 $"for booking {booking.Id}.");
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Warn($"Failed to send confirmation email for booking " +
+                                 $"{booking.Id}: {ex.Message}");
+                    }
+                });
+            }
+
             var result = await _bookingRepository.GetByIdWithDetailsAsync(booking.Id);
-            return _mapper.Map<BookingDto>(result);
+            return _mapper.Map<BookingDto>(result!);
         }
 
         public async Task<BookingDto> GetByIdAsync(int bookingId, int userId)
@@ -110,17 +148,18 @@ namespace CozyHavenStayV3.BookingService.Services.Implementations
                 ?? throw new KeyNotFoundException("Booking not found.");
 
             if (booking.UserId != userId)
-            {
-                throw new UnauthorizedAccessException("You do not have permission to view this booking.");
-            }
+                throw new UnauthorizedAccessException(
+                    "You do not have permission to view this booking.");
 
             return _mapper.Map<BookingDto>(booking);
         }
 
-        public async Task<PagedResult<BookingDto>> GetMyBookingsAsync(int userId, int pageNumber, int pageSize)
+        public async Task<PagedResult<BookingDto>> GetMyBookingsAsync(
+            int userId, int pageNumber, int pageSize)
         {
             var totalCount = await _bookingRepository.CountByUserIdAsync(userId);
-            var bookings = await _bookingRepository.GetByUserIdAsync(userId, pageNumber, pageSize);
+            var bookings = await _bookingRepository
+                .GetByUserIdAsync(userId, pageNumber, pageSize);
 
             return new PagedResult<BookingDto>
             {
@@ -137,16 +176,12 @@ namespace CozyHavenStayV3.BookingService.Services.Implementations
                 ?? throw new KeyNotFoundException("Booking not found.");
 
             if (booking.UserId != userId)
-            {
-                throw new UnauthorizedAccessException("You do not have permission to cancel this booking.");
-            }
+                throw new UnauthorizedAccessException(
+                    "You do not have permission to cancel this booking.");
 
             if (booking.Status == BookingStatus.Cancelled)
-            {
                 throw new InvalidOperationException("This booking is already cancelled.");
-            }
 
-            // Calculate refund based on cancellation timing
             var refundAmount = CalculateRefundAmount(booking);
 
             booking.Status = BookingStatus.Cancelled;
@@ -155,7 +190,8 @@ namespace CozyHavenStayV3.BookingService.Services.Implementations
             await _paymentService.MarkRefundPendingAsync(booking.Payment, refundAmount);
             await _hotelServiceClient.ReleaseBookingBlockAsync(booking.RoomId, booking.Id);
 
-            Log.Info($"Booking {bookingId} cancelled by user {userId}. Refund amount: {refundAmount} of {booking.TotalFare}.");
+            Log.Info($"Booking {bookingId} cancelled by user {userId}. " +
+                     $"Refund: {refundAmount} of {booking.TotalFare}.");
 
             return _mapper.Map<BookingDto>(booking);
         }
@@ -164,33 +200,32 @@ namespace CozyHavenStayV3.BookingService.Services.Implementations
         {
             var isOwned = await _hotelServiceClient.IsHotelOwnedByAsync(hotelId, ownerId);
             if (!isOwned)
-            {
-                throw new UnauthorizedAccessException("You do not have permission to view bookings for this hotel.");
-            }
+                throw new UnauthorizedAccessException(
+                    "You do not have permission to view bookings for this hotel.");
 
             var bookings = await _bookingRepository.GetByHotelIdAsync(hotelId);
             return _mapper.Map<List<BookingDto>>(bookings);
         }
-        public async Task<bool> VerifyCompletedStayAsync(int bookingId, int userId, int hotelId)
+
+        public async Task<bool> VerifyCompletedStayAsync(
+            int bookingId, int userId, int hotelId)
         {
             var booking = await _bookingRepository.GetByIdAsync(bookingId);
-
             if (booking is null) return false;
             if (booking.UserId != userId) return false;
             if (booking.HotelId != hotelId) return false;
             if (booking.CheckOut > DateTime.UtcNow) return false;
             if (booking.Status != BookingStatus.Confirmed) return false;
-
             return true;
         }
 
         public async Task<List<BookingDto>> GetPendingRefundsAsync(int ownerId)
         {
             var ownedHotelIds = await _hotelServiceClient.GetOwnedHotelIdsAsync(ownerId);
-
-            var allPendingRefunds = await _bookingRepository.GetCancelledWithPendingRefundsAsync();
-            var ownedPendingRefunds = allPendingRefunds.Where(b => ownedHotelIds.Contains(b.HotelId)).ToList();
-
+            var allPendingRefunds = await _bookingRepository
+                .GetCancelledWithPendingRefundsAsync();
+            var ownedPendingRefunds = allPendingRefunds
+                .Where(b => ownedHotelIds.Contains(b.HotelId)).ToList();
             return _mapper.Map<List<BookingDto>>(ownedPendingRefunds);
         }
 
@@ -199,41 +234,36 @@ namespace CozyHavenStayV3.BookingService.Services.Implementations
             var booking = await _bookingRepository.GetByIdWithDetailsAsync(bookingId)
                 ?? throw new KeyNotFoundException("Booking not found.");
 
-            var isOwned = await _hotelServiceClient.IsHotelOwnedByAsync(booking.HotelId, ownerId);
+            var isOwned = await _hotelServiceClient
+                .IsHotelOwnedByAsync(booking.HotelId, ownerId);
             if (!isOwned)
-            {
-                throw new UnauthorizedAccessException("You do not have permission to approve refunds for this booking.");
-            }
+                throw new UnauthorizedAccessException(
+                    "You do not have permission to approve refunds for this booking.");
 
             await _paymentService.ApproveRefundAsync(bookingId);
 
-            var updatedBooking = await _bookingRepository.GetByIdWithDetailsAsync(bookingId)
+            var updatedBooking = await _bookingRepository
+                .GetByIdWithDetailsAsync(bookingId)
                 ?? throw new KeyNotFoundException("Booking not found.");
 
             return _mapper.Map<BookingDto>(updatedBooking);
         }
+
         public async Task<RefundPolicyDto> GetRefundPolicyAsync(int bookingId, int userId)
         {
             var booking = await _bookingRepository.GetByIdWithDetailsAsync(bookingId)
                 ?? throw new KeyNotFoundException("Booking not found.");
 
             if (booking.UserId != userId)
-            {
                 throw new UnauthorizedAccessException(
                     "You do not have permission to view this booking's refund policy.");
-            }
 
             if (booking.Status == BookingStatus.Cancelled)
-            {
-                throw new InvalidOperationException(
-                    "This booking is already cancelled.");
-            }
+                throw new InvalidOperationException("This booking is already cancelled.");
 
             var hoursUntilCheckIn = (booking.CheckIn - DateTime.UtcNow).TotalHours;
             var refundAmount = CalculateRefundAmount(booking);
 
-            // Calculate percentage and policy message based on same tiers
-            // as CalculateRefundAmount — keeping them in sync
             int refundPercentage;
             string policy;
 
@@ -268,25 +298,13 @@ namespace CozyHavenStayV3.BookingService.Services.Implementations
                 Policy = policy
             };
         }
+
         private static decimal CalculateRefundAmount(Booking booking)
         {
             var hoursUntilCheckIn = (booking.CheckIn - DateTime.UtcNow).TotalHours;
-
-            if (hoursUntilCheckIn > 48)
-            {
-                return booking.TotalFare;
-            }
-            else if (hoursUntilCheckIn > 24)
-            {
-                return Math.Round(booking.TotalFare * 0.5m, 2);
-            }
-            else
-            {
-                return 0m;
-            }
+            if (hoursUntilCheckIn > 48) return booking.TotalFare;
+            if (hoursUntilCheckIn > 24) return Math.Round(booking.TotalFare * 0.5m, 2);
+            return 0m;
         }
-
-
     }
-
 }

@@ -213,7 +213,8 @@ namespace CozyHavenStayV3.HotelService.Services.Implementations
                     MaxOccupancy = room.MaxOccupancy,
                     IsAC = room.IsAC,
                     BaseFare = room.BaseFare,
-                    IsAvailable = !hasOverlap
+                    IsAvailable = !hasOverlap,
+                    ImageUrl = room.ImageUrl
                 });
             }
 
