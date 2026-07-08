@@ -43,8 +43,7 @@ export const AuthProvider = ({ children }) => {
   );
 };
 
-// Custom hook — any component calls useAuth() instead of
-// useContext(AuthContext) directly, cleaner and less verbose
+
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {

@@ -65,6 +65,7 @@ namespace CozyHavenStayV3.HotelService.Services.Implementations
             }
 
             hotel.Name = dto.Name;
+            hotel.Name = dto.Name;
             hotel.Location = dto.Location;
             hotel.Description = dto.Description;
             hotel.HasDining = dto.HasDining;
@@ -73,6 +74,7 @@ namespace CozyHavenStayV3.HotelService.Services.Implementations
             hotel.HasRoomService = dto.HasRoomService;
             hotel.HasSwimmingPool = dto.HasSwimmingPool;
             hotel.HasFitnessCenter = dto.HasFitnessCenter;
+            hotel.ImageUrl = dto.ImageUrl;
 
             await _hotelRepository.UpdateAsync(hotel);
             Log.Info($"Hotel {hotelId} updated by owner {ownerId}.");

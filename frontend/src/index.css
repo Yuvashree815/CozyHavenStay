@@ -6,19 +6,19 @@
 
 :root {
   /* Brand Colors */
-  --primary: #1a3c5e;        /* Deep navy — trust, luxury */
-  --primary-light: #2d6a9f;  /* Lighter navy for hover */
-  --accent: #c9a84c;         /* Gold — premium feel */
-  --accent-light: #e8c96d;   /* Light gold */
+  --primary: #1a3c5e;
+  --primary-light: #2d6a9f;
+  --accent: #c9a84c;
+  --accent-light: #e8c96d;
 
   /* Neutrals */
-  --bg: #f8f6f2;             /* Warm off-white background */
-  --surface: #ffffff;        /* Card surfaces */
-  --surface-warm: #fdf9f3;   /* Slightly warm surface */
-  --border: #e8e0d4;         /* Warm border */
-  --text-primary: #1a1a2e;   /* Near black */
-  --text-secondary: #5a5a7a; /* Muted text */
-  --text-light: #9090a8;     /* Light muted */
+  --bg: #f8f6f2;
+  --surface: #ffffff;
+  --surface-warm: #fdf9f3;
+  --border: #e8e0d4;
+  --text-primary: #1a1a2e;
+  --text-secondary: #5a5a7a;
+  --text-light: #9090a8;
 
   /* Status Colors */
   --success: #2d7a4f;
@@ -37,6 +37,182 @@
   --radius-md: 12px;
   --radius-lg: 20px;
   --radius-xl: 32px;
+
+  /* Theme transition */
+  --theme-transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* ============================================
+   DARK THEME
+   ============================================ */
+
+[data-theme="dark"] {
+  --primary: #4a90d9;
+  --primary-light: #6baee8;
+  --accent: #c9a84c;
+  --accent-light: #e8c96d;
+
+  --bg: #0f1117;
+  --surface: #1a1d27;
+  --surface-warm: #1e2130;
+  --border: #2d3148;
+  --text-primary: #e8eaf0;
+  --text-secondary: #9ca3bf;
+  --text-light: #6b7394;
+
+  --success: #4caf7d;
+  --warning: #c9a84c;
+  --danger: #e05c4b;
+  --info: #4a90d9;
+
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 20px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 8px 40px rgba(0, 0, 0, 0.5);
+  --shadow-hover: 0 12px 48px rgba(0, 0, 0, 0.6);
+}
+
+/* Dark theme specific overrides */
+[data-theme="dark"] body {
+  background-color: var(--bg);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .form-control,
+[data-theme="dark"] .form-select {
+  background-color: #252836 !important;
+  border-color: var(--border) !important;
+  color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .form-control::placeholder {
+  color: var(--text-light) !important;
+}
+
+[data-theme="dark"] .form-control:focus,
+[data-theme="dark"] .form-select:focus {
+  background-color: #2d3148 !important;
+  border-color: var(--primary) !important;
+  box-shadow: 0 0 0 3px rgba(74, 144, 217, 0.15) !important;
+  color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .dropdown-menu {
+  background-color: var(--surface);
+  border-color: var(--border);
+}
+
+[data-theme="dark"] .dropdown-item {
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .dropdown-item:hover {
+  background-color: var(--surface-warm);
+}
+
+[data-theme="dark"] .pro-table tbody tr:hover {
+  background: #252836;
+}
+
+[data-theme="dark"] .hero-search-box {
+  background: var(--surface);
+}
+
+[data-theme="dark"] .hero-search-input {
+  background: var(--surface) !important;
+  color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .hero-search-input::placeholder {
+  color: var(--text-light) !important;
+}
+
+[data-theme="dark"] .skeleton {
+  background: linear-gradient(90deg, #1e2130 25%, #252836 50%, #1e2130 75%);
+  background-size: 200% 100%;
+}
+
+[data-theme="dark"] .cozy-navbar {
+  background: #111420 !important;
+  box-shadow: 0 2px 20px rgba(0, 0, 0, 0.5);
+}
+
+[data-theme="dark"] .badge-confirmed {
+  background: #1a3a2a;
+  color: #4caf7d;
+  border-color: #2d6645;
+}
+
+[data-theme="dark"] .badge-cancelled {
+  background: #3a1a1a;
+  color: #e05c4b;
+  border-color: #6b2d2d;
+}
+
+[data-theme="dark"] .badge-pending {
+  background: #3a3020;
+  color: #c9a84c;
+  border-color: #6b5a2d;
+}
+
+[data-theme="dark"] .badge-refunded {
+  background: #1a2e3a;
+  color: #4a90d9;
+  border-color: #2d4a6b;
+}
+
+[data-theme="dark"] .role-admin {
+  background: #3a1a1a;
+  color: #e05c4b;
+  border-color: #6b2d2d;
+}
+
+[data-theme="dark"] .role-owner {
+  background: #3a2e1a;
+  color: #c9a84c;
+  border-color: #6b5a2d;
+}
+
+[data-theme="dark"] .role-user {
+  background: #1a2a3a;
+  color: #4a90d9;
+  border-color: #2d4a6b;
+}
+
+[data-theme="dark"] .status-active {
+  background: #1a3a2a;
+  color: #4caf7d;
+  border-color: #2d6645;
+}
+
+[data-theme="dark"] .status-inactive {
+  background: #3a1a1a;
+  color: #e05c4b;
+  border-color: #6b2d2d;
+}
+
+[data-theme="dark"] .btn-outline-primary {
+  border-color: var(--primary) !important;
+  color: var(--primary) !important;
+}
+
+[data-theme="dark"] .btn-outline-primary:hover {
+  background: var(--primary) !important;
+  color: white !important;
+}
+
+[data-theme="dark"] .btn-outline-secondary {
+  border-color: var(--border) !important;
+  color: var(--text-secondary) !important;
+  background: transparent !important;
+}
+
+[data-theme="dark"] .btn-outline-secondary:hover {
+  background: var(--surface-warm) !important;
+  color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1);
 }
 
 /* ============================================
@@ -55,6 +231,7 @@ body {
   color: var(--text-primary);
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
+  transition: var(--theme-transition);
 }
 
 h1, h2, h3, h4 {
@@ -68,12 +245,13 @@ h1, h2, h3, h4 {
    ============================================ */
 
 .cozy-navbar {
-  background: var(--primary) !important;
+  background: #1a3c5e !important;
   box-shadow: 0 2px 20px rgba(26, 60, 94, 0.3);
   padding: 0.75rem 0;
   position: sticky;
   top: 0;
   z-index: 1000;
+  transition: background-color 0.3s ease;
 }
 
 .cozy-navbar .navbar-brand {
@@ -115,6 +293,29 @@ h1, h2, h3, h4 {
 .cozy-navbar .btn-logout:hover {
   background: rgba(255,255,255,0.1);
   border-color: white;
+}
+
+/* Theme toggle button */
+.theme-toggle {
+  background: rgba(255,255,255,0.1);
+  border: 1.5px solid rgba(255,255,255,0.3);
+  color: white;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.theme-toggle:hover {
+  background: rgba(255,255,255,0.2);
+  border-color: white;
+  transform: rotate(20deg);
 }
 
 .user-avatar {
@@ -285,6 +486,7 @@ h1, h2, h3, h4 {
   flex: 1;
   border-radius: var(--radius-md) !important;
   color: var(--text-primary);
+  background: transparent;
 }
 
 .hero-search-input:focus {
@@ -757,21 +959,10 @@ h1, h2, h3, h4 {
    UTILITIES
    ============================================ */
 
-.text-gold {
-  color: var(--accent) !important;
-}
-
-.text-navy {
-  color: var(--primary) !important;
-}
-
-.bg-navy {
-  background: var(--primary) !important;
-}
-
-.bg-warm {
-  background: var(--bg) !important;
-}
+.text-gold { color: var(--accent) !important; }
+.text-navy { color: var(--primary) !important; }
+.bg-navy { background: var(--primary) !important; }
+.bg-warm { background: var(--bg) !important; }
 
 .section-title {
   font-size: 1.4rem;
@@ -807,29 +998,16 @@ h1, h2, h3, h4 {
    ============================================ */
 
 @media (max-width: 768px) {
-  .hero-title {
-    font-size: 2rem;
-  }
-
-  .hero-search-box {
-    flex-direction: column;
-  }
-
-  .hero-section {
-    padding: 3rem 1rem;
-    min-height: 380px;
-  }
-
-  .stat-number {
-    font-size: 2rem;
-  }
+  .hero-title { font-size: 2rem; }
+  .hero-search-box { flex-direction: column; }
+  .hero-section { padding: 3rem 1rem; min-height: 380px; }
+  .stat-number { font-size: 2rem; }
 }
 
 /* ============================================
-   PROFESSIONAL BADGES — soft, muted colors
+   ROLE BADGES
    ============================================ */
 
-/* Role badges */
 .role-admin {
   background: #fde8e8;
   color: #c0392b;
@@ -866,7 +1044,6 @@ h1, h2, h3, h4 {
   display: inline-block;
 }
 
-/* Status badges */
 .status-active {
   background: #e6f9f0;
   color: #1e8449;
@@ -935,7 +1112,6 @@ h1, h2, h3, h4 {
   border-bottom: none;
 }
 
-/* User avatar in table */
 .table-avatar {
   width: 36px;
   height: 36px;
@@ -948,7 +1124,6 @@ h1, h2, h3, h4 {
   flex-shrink: 0;
 }
 
-/* Action button */
 .btn-deactivate {
   background: transparent;
   border: 1.5px solid #e0d0d0;

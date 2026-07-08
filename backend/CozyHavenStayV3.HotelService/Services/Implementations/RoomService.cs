@@ -83,6 +83,7 @@ namespace CozyHavenStayV3.HotelService.Services.Implementations
             room.MaxOccupancy = MaxOccupancyByBedType[dto.BedType];
             room.IsAC = dto.IsAC;
             room.BaseFare = dto.BaseFare;
+            room.ImageUrl = dto.ImageUrl;
 
             await _roomRepository.UpdateAsync(room);
             Log.Info($"Room {roomId} updated by owner {ownerId}.");

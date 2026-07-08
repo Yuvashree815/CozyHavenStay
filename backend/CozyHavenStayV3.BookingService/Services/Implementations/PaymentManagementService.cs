@@ -15,9 +15,9 @@ namespace CozyHavenStayV3.BookingService.Services.Implementations
             _paymentRepository = paymentRepository;
         }
 
-        public async Task<Payment> ProcessPaymentAsync(int bookingId, decimal amount, PaymentMethod method)
+        public async Task<Payment> ProcessPaymentAsync(
+            int bookingId, decimal amount, PaymentMethod method)
         {
-            
             var payment = new Payment
             {
                 BookingId = bookingId,
@@ -36,10 +36,24 @@ namespace CozyHavenStayV3.BookingService.Services.Implementations
 
         public async Task MarkRefundPendingAsync(Payment payment, decimal refundAmount)
         {
-            payment.Status = PaymentStatus.RefundPending;
-            payment.RefundAmount = refundAmount;
-            await _paymentRepository.UpdateAsync(payment);
-            Log.Info($"Payment {payment.Id} marked as RefundPending. Refund amount: {refundAmount}");
+            if (refundAmount <= 0)
+            {
+                // No refund due — mark as Refunded immediately
+                // Owner does not need to approve a zero refund
+                payment.Status = PaymentStatus.Refunded;
+                payment.RefundAmount = 0;
+                payment.RefundedAt = DateTime.UtcNow;
+                await _paymentRepository.UpdateAsync(payment);
+                Log.Info($"Payment {payment.Id} — zero refund, marked Refunded immediately.");
+            }
+            else
+            {
+                // Refund due — owner needs to approve
+                payment.Status = PaymentStatus.RefundPending;
+                payment.RefundAmount = refundAmount;
+                await _paymentRepository.UpdateAsync(payment);
+                Log.Info($"Payment {payment.Id} marked RefundPending. Refund amount: {refundAmount}");
+            }
         }
 
         public async Task<Payment> ApproveRefundAsync(int bookingId)
@@ -48,9 +62,8 @@ namespace CozyHavenStayV3.BookingService.Services.Implementations
                 ?? throw new KeyNotFoundException("Payment not found for this booking.");
 
             if (payment.Status != PaymentStatus.RefundPending)
-            {
-                throw new InvalidOperationException("This booking does not have a pending refund.");
-            }
+                throw new InvalidOperationException(
+                    "This booking does not have a pending refund.");
 
             payment.Status = PaymentStatus.Refunded;
             payment.RefundedAt = DateTime.UtcNow;

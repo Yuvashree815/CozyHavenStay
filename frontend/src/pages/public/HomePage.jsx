@@ -1,41 +1,45 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { isSimpleSearch, parseSearchQuery, buildSearchUrl } from '../../utils/searchParser';
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import {
+  isSimpleSearch,
+  parseSearchQuery,
+  buildSearchUrl,
+} from "../../utils/searchParser";
 
 const features = [
   {
-    icon: '🔍',
-    title: 'Smart Search',
-    desc: 'Search naturally — "hotel in Chennai with pool" and we find exactly what you need.'
+    icon: "🔍",
+    title: "Smart Search",
+    desc: 'Search naturally — "hotel in Chennai with pool" and we find exactly what you need.',
   },
   {
-    icon: '💳',
-    title: 'Instant Booking',
-    desc: 'Book your room instantly with transparent pricing and no hidden charges.'
+    icon: "💳",
+    title: "Instant Booking",
+    desc: "Book your room instantly with transparent pricing and no hidden charges.",
   },
   {
-    icon: '⭐',
-    title: 'Verified Reviews',
-    desc: 'Every review comes from a guest who actually completed their stay.'
+    icon: "⭐",
+    title: "Verified Reviews",
+    desc: "Every review comes from a guest who actually completed their stay.",
   },
   {
-    icon: '🔒',
-    title: 'Secure Payments',
-    desc: 'Your payment information is always protected with bank-level security.'
+    icon: "🔒",
+    title: "Secure Payments",
+    desc: "Your payment information is always protected with bank-level security.",
   },
 ];
 
 const cities = [
-  { name: 'Chennai', emoji: '🌊' },
-  { name: 'Mumbai', emoji: '🏙️' },
-  { name: 'Bangalore', emoji: '🌿' },
-  { name: 'Delhi', emoji: '🏛️' },
-  { name: 'Hyderabad', emoji: '💎' },
-  { name: 'Kolkata', emoji: '🎭' },
+  { name: "Chennai", emoji: "🌊" },
+  { name: "Mumbai", emoji: "🏙️" },
+  { name: "Bangalore", emoji: "🌿" },
+  { name: "Delhi", emoji: "🏛️" },
+  { name: "Hyderabad", emoji: "💎" },
+  { name: "Kolkata", emoji: "🎭" },
 ];
 
 const HomePage = () => {
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState("");
   const navigate = useNavigate();
 
   const handleSearch = (e) => {
@@ -51,15 +55,25 @@ const HomePage = () => {
       // Natural language — keyword parse
       const parsed = parseSearchQuery(trimmed);
       const queryString = buildSearchUrl(parsed);
-      navigate(`/search?${queryString}&originalQuery=${encodeURIComponent(trimmed)}`);
+      navigate(
+        `/search?${queryString}&originalQuery=${encodeURIComponent(trimmed)}`,
+      );
     }
   };
 
   const getSearchHint = () => {
     if (!query.trim()) return null;
     return isSimpleSearch(query.trim())
-      ? { icon: '⚡', text: 'Quick search by location', color: 'rgba(255,255,255,0.6)' }
-      : { icon: '🔍', text: 'Smart search — detecting location & amenities', color: 'var(--accent)' };
+      ? {
+          icon: "⚡",
+          text: "Quick search by location",
+          color: "rgba(255,255,255,0.6)",
+        }
+      : {
+          icon: "🔍",
+          text: "Smart search — detecting location & amenities",
+          color: "var(--accent)",
+        };
   };
 
   const hint = getSearchHint();
@@ -71,19 +85,24 @@ const HomePage = () => {
         <div className="container position-relative" style={{ zIndex: 1 }}>
           <div className="row justify-content-center text-center">
             <div className="col-lg-8">
-              <p style={{
-                color: 'var(--accent)', fontWeight: 600,
-                letterSpacing: '2px', fontSize: '0.85rem',
-                textTransform: 'uppercase', marginBottom: '1rem'
-              }}>
+              <p
+                style={{
+                  color: "var(--accent)",
+                  fontWeight: 600,
+                  letterSpacing: "2px",
+                  fontSize: "0.85rem",
+                  textTransform: "uppercase",
+                  marginBottom: "1rem",
+                }}
+              >
                 ✦ Smart Hotel Booking
               </p>
               <h1 className="hero-title">
                 Find Your Perfect <span>Stay</span>
               </h1>
               <p className="hero-subtitle">
-                Search by city or describe what you need —
-                "hotel in Chennai with pool and wifi"
+                Search by city or describe what you need — "hotel in Chennai
+                with pool and wifi"
               </p>
 
               {/* Search box */}
@@ -105,10 +124,14 @@ const HomePage = () => {
 
               {/* Live search hint */}
               {hint && (
-                <div style={{
-                  marginTop: '0.75rem', fontSize: '0.8rem',
-                  color: hint.color, transition: 'all 0.2s ease'
-                }}>
+                <div
+                  style={{
+                    marginTop: "0.75rem",
+                    fontSize: "0.8rem",
+                    color: hint.color,
+                    transition: "all 0.2s ease",
+                  }}
+                >
                   {hint.icon} {hint.text}
                 </div>
               )}
@@ -116,22 +139,27 @@ const HomePage = () => {
               {/* Quick stats */}
               <div className="d-flex justify-content-center gap-4 mt-4">
                 {[
-                  { num: '500+', label: 'Hotels' },
-                  { num: '50K+', label: 'Happy Guests' },
-                  { num: '100+', label: 'Cities' },
+                  { num: "500+", label: "Hotels" },
+                  { num: "50K+", label: "Happy Guests" },
+                  { num: "100+", label: "Cities" },
                 ].map(({ num, label }) => (
                   <div key={label} className="text-center">
-                    <div style={{
-                      fontSize: '1.4rem', fontWeight: 700,
-                      color: 'var(--accent)',
-                      fontFamily: 'Playfair Display, serif'
-                    }}>
+                    <div
+                      style={{
+                        fontSize: "1.4rem",
+                        fontWeight: 700,
+                        color: "var(--accent)",
+                        fontFamily: "Playfair Display, serif",
+                      }}
+                    >
                       {num}
                     </div>
-                    <div style={{
-                      fontSize: '0.8rem',
-                      color: 'rgba(255,255,255,0.7)'
-                    }}>
+                    <div
+                      style={{
+                        fontSize: "0.8rem",
+                        color: "rgba(255,255,255,0.7)",
+                      }}
+                    >
                       {label}
                     </div>
                   </div>
@@ -167,10 +195,13 @@ const HomePage = () => {
               <div className="feature-card">
                 <div className="feature-icon">{icon}</div>
                 <div className="feature-title">{title}</div>
-                <p style={{
-                  color: 'var(--text-secondary)',
-                  fontSize: '0.875rem', margin: 0
-                }}>
+                <p
+                  style={{
+                    color: "var(--text-secondary)",
+                    fontSize: "0.875rem",
+                    margin: 0,
+                  }}
+                >
                   {desc}
                 </p>
               </div>
@@ -180,21 +211,27 @@ const HomePage = () => {
       </div>
 
       {/* Trust banner */}
-      <div style={{
-        background: 'linear-gradient(135deg, var(--primary), var(--primary-light))',
-        borderRadius: 'var(--radius-lg)', padding: '2.5rem',
-        textAlign: 'center', color: 'white', marginBottom: '2rem'
-      }}>
-        <h3 style={{ color: 'white', marginBottom: '0.5rem' }}>
+      <div
+        style={{
+          background:
+            "linear-gradient(135deg, var(--primary), var(--primary-light))",
+          borderRadius: "var(--radius-lg)",
+          padding: "2.5rem",
+          textAlign: "center",
+          color: "white",
+          marginBottom: "2rem",
+        }}
+      >
+        <h3 style={{ color: "white", marginBottom: "0.5rem" }}>
           Ready to find your perfect stay?
         </h3>
-        <p style={{ color: 'rgba(255,255,255,0.8)', marginBottom: '1.5rem' }}>
+        <p style={{ color: "rgba(255,255,255,0.8)", marginBottom: "1.5rem" }}>
           Join thousands of travelers who book with CozyHavenStay every day.
         </p>
         <button
           className="btn-gold px-4 py-2"
-          style={{ borderRadius: 'var(--radius-sm)', fontSize: '1rem' }}
-          onClick={() => navigate('/register')}
+          style={{ borderRadius: "var(--radius-sm)", fontSize: "1rem" }}
+          onClick={() => navigate("/register")}
         >
           Get Started — It's Free
         </button>
