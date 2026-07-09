@@ -40,17 +40,11 @@ namespace CozyHavenStayV3.HotelService.Tests
 
         // ============================================
         // CalculateFareAsync tests — realistic pricing
-        // Rules:
-        //   - Children ≤5 always free
-        //   - Adults fill free slots first (desc age order)
-        //   - Extra adults → 40% surcharge
-        //   - Extra children (6-14) → 20% surcharge
         // ============================================
 
         [Test]
         public async Task CalculateFareAsync_TwoAdultsExactlyFillsOccupancy_NoSurcharge()
         {
-            // Double bed, free occupancy 2, exactly 2 adults — nobody extra
             var room = new Room
             {
                 Id = 1,
@@ -85,12 +79,6 @@ namespace CozyHavenStayV3.HotelService.Tests
         [Test]
         public async Task CalculateFareAsync_ThreeGuests_AdultsGetFreeSlots_ChildPays20Percent()
         {
-            // Double bed, free occupancy 2
-            // Guests: [25, 30, 10]
-            // Always free (≤5): none
-            // Remaining desc: [30, 25, 10]
-            // Free slots: 30 ✓, 25 ✓
-            // Extra: 10 (age ≤14) → 20% = ₹700/night
             var room = new Room
             {
                 Id = 1,
@@ -115,23 +103,15 @@ namespace CozyHavenStayV3.HotelService.Tests
 
             var result = await _roomService.CalculateFareAsync(1, request);
 
-            // Child (10) is extra, charged 20% of 3500 = ₹700
             Assert.That(result.PerNightSurcharge, Is.EqualTo(700m));
-            Assert.That(result.SurchargeAmount, Is.EqualTo(700m)); // 1 night
-            Assert.That(result.TotalFare, Is.EqualTo(4200m)); // 3500 + 700
+            Assert.That(result.SurchargeAmount, Is.EqualTo(700m));
+            Assert.That(result.TotalFare, Is.EqualTo(4200m));
             Assert.That(result.ExceedsMaxOccupancy, Is.False);
         }
 
         [Test]
         public async Task CalculateFareAsync_ChildUnderSix_AlwaysFreeReducesAvailableSlots()
         {
-            // Double bed, free occupancy 2
-            // Guests: [25, 30, 4]
-            // Always free (≤5): [4] — consumes 0 free slots (always free separately)
-            // Remaining desc: [30, 25]
-            // Adjusted free slots: 2 - 1 = 1
-            // Free: 30 ✓
-            // Extra: 25 → 40% = ₹1,400/night
             var room = new Room
             {
                 Id = 1,
@@ -156,7 +136,6 @@ namespace CozyHavenStayV3.HotelService.Tests
 
             var result = await _roomService.CalculateFareAsync(1, request);
 
-            // Age 4 always free, age 30 fills 1 adjusted free slot, age 25 is extra at 40%
             Assert.That(result.PerNightSurcharge, Is.EqualTo(1400m));
             Assert.That(result.SurchargeAmount, Is.EqualTo(1400m));
             Assert.That(result.TotalFare, Is.EqualTo(4900m));
@@ -165,9 +144,6 @@ namespace CozyHavenStayV3.HotelService.Tests
         [Test]
         public async Task CalculateFareAsync_MultipleNights_SurchargeMultipliedCorrectly()
         {
-            // Double bed, 4 nights
-            // Guests: [25, 30, 10] — child (10) extra at 20% = ₹700/night
-            // Over 4 nights: surcharge = ₹2,800, total = ₹16,800
             var room = new Room
             {
                 Id = 1,
@@ -184,7 +160,7 @@ namespace CozyHavenStayV3.HotelService.Tests
             var request = new FareCalculationRequestDto
             {
                 CheckIn = new DateTime(2026, 12, 1),
-                CheckOut = new DateTime(2026, 12, 5), // 4 nights
+                CheckOut = new DateTime(2026, 12, 5),
                 NumberOfAdults = 2,
                 NumberOfChildren = 1,
                 AllGuestAges = new List<int> { 25, 30, 10 }
@@ -194,20 +170,13 @@ namespace CozyHavenStayV3.HotelService.Tests
 
             Assert.That(result.NumberOfNights, Is.EqualTo(4));
             Assert.That(result.PerNightSurcharge, Is.EqualTo(700m));
-            Assert.That(result.SurchargeAmount, Is.EqualTo(2800m)); // 700 × 4
-            Assert.That(result.TotalFare, Is.EqualTo(16800m)); // (3500+700) × 4
+            Assert.That(result.SurchargeAmount, Is.EqualTo(2800m));
+            Assert.That(result.TotalFare, Is.EqualTo(16800m));
         }
 
         [Test]
         public async Task CalculateFareAsync_FourGuests_TwoAdultsTwoExtra_BothSurcharged()
         {
-            // Double bed, free occupancy 2
-            // Guests: [16, 20, 28, 30]
-            // Always free (≤5): none
-            // Remaining desc: [30, 28, 20, 16]
-            // Free: 30 ✓, 28 ✓
-            // Extra: 20 → 40% = ₹1,400, 16 → 40% = ₹1,400
-            // Total surcharge: ₹2,800/night
             var room = new Room
             {
                 Id = 1,
@@ -232,8 +201,8 @@ namespace CozyHavenStayV3.HotelService.Tests
 
             var result = await _roomService.CalculateFareAsync(1, request);
 
-            Assert.That(result.PerNightSurcharge, Is.EqualTo(2800m)); // 1400 + 1400
-            Assert.That(result.TotalFare, Is.EqualTo(6300m)); // 3500 + 2800
+            Assert.That(result.PerNightSurcharge, Is.EqualTo(2800m));
+            Assert.That(result.TotalFare, Is.EqualTo(6300m));
         }
 
         [Test]
@@ -288,7 +257,7 @@ namespace CozyHavenStayV3.HotelService.Tests
         }
 
         // ============================================
-        // GetAvailableRoomsAsync tests — unchanged
+        // GetAvailableRoomsAsync tests
         // ============================================
 
         [Test]
@@ -303,11 +272,15 @@ namespace CozyHavenStayV3.HotelService.Tests
 
             _hotelRepositoryMock.Setup(r => r.GetByIdAsync(1)).ReturnsAsync(hotel);
             _roomRepositoryMock.Setup(r => r.GetByHotelIdAsync(1)).ReturnsAsync(rooms);
-            _roomBlockRepositoryMock
-                .Setup(r => r.HasOverlappingBlockAsync(It.IsAny<int>(), It.IsAny<DateTime>(), It.IsAny<DateTime>()))
-                .ReturnsAsync(false);
 
-            var result = await _roomService.GetAvailableRoomsAsync(1, new DateTime(2026, 12, 1), new DateTime(2026, 12, 5));
+            // All rooms return null source → available
+            _roomBlockRepositoryMock
+                .Setup(r => r.GetOverlappingBlockSourceAsync(
+                    It.IsAny<int>(), It.IsAny<DateTime>(), It.IsAny<DateTime>()))
+                .ReturnsAsync((string?)null);
+
+            var result = await _roomService.GetAvailableRoomsAsync(
+                1, new DateTime(2026, 12, 1), new DateTime(2026, 12, 5));
 
             Assert.That(result.Count, Is.EqualTo(2));
             Assert.That(result.All(r => r.IsAvailable), Is.True);
@@ -326,17 +299,25 @@ namespace CozyHavenStayV3.HotelService.Tests
             _hotelRepositoryMock.Setup(r => r.GetByIdAsync(1)).ReturnsAsync(hotel);
             _roomRepositoryMock.Setup(r => r.GetByHotelIdAsync(1)).ReturnsAsync(rooms);
 
+            // Room 1 — blocked (Booking source) → unavailable
             _roomBlockRepositoryMock
-                .Setup(r => r.HasOverlappingBlockAsync(1, It.IsAny<DateTime>(), It.IsAny<DateTime>()))
-                .ReturnsAsync(true);
-            _roomBlockRepositoryMock
-                .Setup(r => r.HasOverlappingBlockAsync(2, It.IsAny<DateTime>(), It.IsAny<DateTime>()))
-                .ReturnsAsync(false);
+                .Setup(r => r.GetOverlappingBlockSourceAsync(
+                    1, It.IsAny<DateTime>(), It.IsAny<DateTime>()))
+                .ReturnsAsync("Booking");
 
-            var result = await _roomService.GetAvailableRoomsAsync(1, new DateTime(2026, 12, 1), new DateTime(2026, 12, 5));
+            // Room 2 — no block → available
+            _roomBlockRepositoryMock
+                .Setup(r => r.GetOverlappingBlockSourceAsync(
+                    2, It.IsAny<DateTime>(), It.IsAny<DateTime>()))
+                .ReturnsAsync((string?)null);
+
+            var result = await _roomService.GetAvailableRoomsAsync(
+                1, new DateTime(2026, 12, 1), new DateTime(2026, 12, 5));
 
             Assert.That(result.First(r => r.Id == 1).IsAvailable, Is.False);
+            Assert.That(result.First(r => r.Id == 1).UnavailableReason, Is.EqualTo("Booking"));
             Assert.That(result.First(r => r.Id == 2).IsAvailable, Is.True);
+            Assert.That(result.First(r => r.Id == 2).UnavailableReason, Is.Null);
         }
 
         [Test]
@@ -345,7 +326,8 @@ namespace CozyHavenStayV3.HotelService.Tests
             _hotelRepositoryMock.Setup(r => r.GetByIdAsync(999)).ReturnsAsync((Hotel?)null);
 
             Assert.ThrowsAsync<KeyNotFoundException>(async () =>
-                await _roomService.GetAvailableRoomsAsync(999, new DateTime(2026, 12, 1), new DateTime(2026, 12, 5)));
+                await _roomService.GetAvailableRoomsAsync(
+                    999, new DateTime(2026, 12, 1), new DateTime(2026, 12, 5)));
         }
 
         [Test]
@@ -355,7 +337,8 @@ namespace CozyHavenStayV3.HotelService.Tests
             _hotelRepositoryMock.Setup(r => r.GetByIdAsync(1)).ReturnsAsync(hotel);
 
             Assert.ThrowsAsync<ArgumentException>(async () =>
-                await _roomService.GetAvailableRoomsAsync(1, new DateTime(2026, 12, 10), new DateTime(2026, 12, 5)));
+                await _roomService.GetAvailableRoomsAsync(
+                    1, new DateTime(2026, 12, 10), new DateTime(2026, 12, 5)));
         }
     }
 }
