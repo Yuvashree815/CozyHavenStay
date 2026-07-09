@@ -18,19 +18,21 @@ pipeline {
             }
         }
 
-        stage('Run Unit Tests') {
+        stage('Build & Run Unit Tests') {
             steps {
+                echo '🔨 Restoring and building solution...'
+                bat '''
+                    cd backend
+                    dotnet restore CozyHavenStayV3.slnx
+                    dotnet build CozyHavenStayV3.slnx -c Debug
+                '''
                 echo '🧪 Running all 70 unit tests...'
                 bat '''
                     cd backend
-                    dotnet test --no-build --verbosity normal ^
-                        CozyHavenStayV3.HotelService.Tests\\CozyHavenStayV3.HotelService.Tests.csproj
-                    dotnet test --no-build --verbosity normal ^
-                        CozyHavenStayV3.IdentityService.Tests\\CozyHavenStayV3.IdentityService.Tests.csproj
-                    dotnet test --no-build --verbosity normal ^
-                        CozyHavenStayV3.BookingService.Tests\\CozyHavenStayV3.BookingService.Tests.csproj
-                    dotnet test --no-build --verbosity normal ^
-                        CozyHavenStayV3.ReviewService.Tests\\CozyHavenStayV3.ReviewService.Tests.csproj
+                    dotnet test CozyHavenStayV3.HotelService.Tests\\CozyHavenStayV3.HotelService.Tests.csproj --no-build --verbosity normal
+                    dotnet test CozyHavenStayV3.IdentityService.Tests\\CozyHavenStayV3.IdentityService.Tests.csproj --no-build --verbosity normal
+                    dotnet test CozyHavenStayV3.BookingService.Tests\\CozyHavenStayV3.BookingService.Tests.csproj --no-build --verbosity normal
+                    dotnet test CozyHavenStayV3.ReviewService.Tests\\CozyHavenStayV3.ReviewService.Tests.csproj --no-build --verbosity normal
                 '''
             }
         }
@@ -73,7 +75,7 @@ pipeline {
 
     post {
         success {
-            echo '✅ Pipeline completed successfully! All tests passed and images pushed to Docker Hub.'
+            echo '✅ Pipeline completed! All tests passed and images pushed to Docker Hub.'
         }
         failure {
             echo '❌ Pipeline failed! Check the logs above for details.'
