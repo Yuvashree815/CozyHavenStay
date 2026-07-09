@@ -14,7 +14,7 @@ pipeline {
                 echo '📥 Checking out code from GitHub...'
                 git branch: 'main',
                     credentialsId: 'github-credentials',
-                    url: 'https://github.com/Yuvashree815/CozyHavenStayV3'
+                    url: 'https://github.com/Yuvashree815/CozyHavenStay'
             }
         }
 
