@@ -5,7 +5,6 @@ pipeline {
         DOCKERHUB_USERNAME = 'yuvashreerajarul'
         DOCKERHUB_CREDENTIALS = credentials('dockerhub-credentials')
         DOTNET_CLI_HOME = 'C:\\Windows\\Temp'
-        
     }
 
     stages {
@@ -61,15 +60,23 @@ pipeline {
         stage('Push Docker Images') {
             steps {
                 echo '📤 Pushing Docker images to Docker Hub...'
-                bat '''
-                    docker login -u %DOCKERHUB_USERNAME% -p %DOCKERHUB_CREDENTIALS_PSW%
-                    docker push %DOCKERHUB_USERNAME%/cozyhaven-identity:latest
-                    docker push %DOCKERHUB_USERNAME%/cozyhaven-hotel:latest
-                    docker push %DOCKERHUB_USERNAME%/cozyhaven-booking:latest
-                    docker push %DOCKERHUB_USERNAME%/cozyhaven-review:latest
-                    docker push %DOCKERHUB_USERNAME%/cozyhaven-gateway:latest
-                    docker push %DOCKERHUB_USERNAME%/cozyhaven-frontend:latest
-                '''
+                bat "docker login -u %DOCKERHUB_USERNAME% -p %DOCKERHUB_CREDENTIALS_PSW%"
+
+                script {
+                    def images = [
+                        'cozyhaven-identity',
+                        'cozyhaven-hotel',
+                        'cozyhaven-booking',
+                        'cozyhaven-review',
+                        'cozyhaven-gateway',
+                        'cozyhaven-frontend'
+                    ]
+                    images.each { image ->
+                        retry(3) {
+                            bat "docker push %DOCKERHUB_USERNAME%/${image}:latest"
+                        }
+                    }
+                }
             }
         }
     }
