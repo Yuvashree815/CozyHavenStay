@@ -5,7 +5,7 @@ pipeline {
         DOCKERHUB_USERNAME = 'yuvashreerajarul'
         DOCKERHUB_CREDENTIALS = credentials('dockerhub-credentials')
         DOTNET_CLI_HOME = 'C:\\Windows\\Temp'
-        DOCKER_HOST = 'tcp://localhost:2375'
+        
     }
 
     stages {
