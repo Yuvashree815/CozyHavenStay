@@ -39,8 +39,14 @@ pipeline {
 
         stage('Build Docker Images') {
             steps {
-                echo '🐳 Building Docker images...'
-                bat 'docker pull nginx:alpine || docker pull nginx:alpine || docker pull nginx:alpine'
+                echo '🐳 Pre-pulling base images...'
+                bat '''
+                    docker pull mcr.microsoft.com/dotnet/aspnet:8.0 || docker pull mcr.microsoft.com/dotnet/aspnet:8.0 || docker pull mcr.microsoft.com/dotnet/aspnet:8.0
+                    docker pull mcr.microsoft.com/dotnet/sdk:8.0 || docker pull mcr.microsoft.com/dotnet/sdk:8.0 || docker pull mcr.microsoft.com/dotnet/sdk:8.0
+                    docker pull node:20-alpine || docker pull node:20-alpine || docker pull node:20-alpine
+                    docker pull nginx:alpine || docker pull nginx:alpine || docker pull nginx:alpine
+                '''
+                echo '🔨 Building all 6 Docker images...'
                 bat '''
                     docker build -t %DOCKERHUB_USERNAME%/cozyhaven-identity:latest ^
                         -f backend/CozyHavenStayV3.IdentityService/Dockerfile backend/
