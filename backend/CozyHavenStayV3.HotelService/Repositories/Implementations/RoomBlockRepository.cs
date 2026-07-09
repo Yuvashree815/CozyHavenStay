@@ -23,17 +23,21 @@ namespace CozyHavenStayV3.HotelService.Repositories.Implementations
                     && rb.CheckOut > checkIn);
         }
 
-        public async Task<List<RoomBlock>> GetByRoomIdAsync(int roomId)
-        {
-            return await _context.RoomBlocks
-                .Where(rb => rb.RoomId == roomId)
-                .ToListAsync();
-        }
-
         public async Task<RoomBlock?> GetByBookingReferenceIdAsync(int bookingReferenceId)
         {
             return await _context.RoomBlocks
                 .FirstOrDefaultAsync(rb => rb.BookingReferenceId == bookingReferenceId);
+        }
+
+        public async Task<string?> GetOverlappingBlockSourceAsync(int roomId, DateTime checkIn, DateTime checkOut)
+        {
+            var block = await _context.RoomBlocks
+                .Where(b => b.RoomId == roomId &&
+                            b.CheckIn < checkOut &&
+                            b.CheckOut > checkIn)
+                .FirstOrDefaultAsync();
+
+            return block?.Source.ToString();
         }
 
         public async Task AddAsync(RoomBlock block)
@@ -46,6 +50,21 @@ namespace CozyHavenStayV3.HotelService.Repositories.Implementations
         {
             _context.RoomBlocks.Remove(block);
             await _context.SaveChangesAsync();
+        }
+        public async Task<RoomBlock?> GetByIdAsync(int blockId)
+        {
+            return await _context.RoomBlocks
+                .Include(b => b.Room)
+                .ThenInclude(r => r.Hotel)
+                .FirstOrDefaultAsync(b => b.Id == blockId);
+        }
+
+        public async Task<List<RoomBlock>> GetByRoomIdAsync(int roomId)
+        {
+            return await _context.RoomBlocks
+                .Where(b => b.RoomId == roomId && b.CheckOut >= DateTime.UtcNow)
+                .OrderBy(b => b.CheckIn)
+                .ToListAsync();
         }
     }
 }

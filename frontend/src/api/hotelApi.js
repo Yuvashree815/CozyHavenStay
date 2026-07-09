@@ -55,3 +55,12 @@ export const filterHotelsApi = (params) => {
   if (params.pageSize) query.append('pageSize', params.pageSize);
   return axiosInstance.get(`/hotel/api/v1/hotels/filter?${query.toString()}`);
 };
+
+export const getRoomBlocksApi = (roomId) =>
+  axiosInstance.get(`/hotel/api/v1/rooms/${roomId}/blocks`);
+
+export const blockRoomForMaintenanceApi = (roomId, data) =>
+  axiosInstance.post(`/hotel/api/v1/rooms/${roomId}/blocks/maintenance`, data);
+
+export const unblockMaintenanceApi = (roomId, blockId) =>
+  axiosInstance.delete(`/hotel/api/v1/rooms/${roomId}/blocks/maintenance/${blockId}`);

@@ -108,6 +108,30 @@ const BookingDetailPage = () => {
 
   if (!booking) return null;
 
+  // ── Date logic ────────────────────────────────────────────────
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const checkInDate = new Date(booking.checkIn);
+  const checkInDay = new Date(booking.checkIn);
+  checkInDay.setHours(0, 0, 0, 0);
+
+  const checkOutDate = new Date(booking.checkOut);
+  const checkOutDay = new Date(booking.checkOut);
+  checkOutDay.setHours(0, 0, 0, 0);
+
+  // Cancel allowed only if check-in day hasn't come yet
+  const isBeforeCheckIn = checkInDay > today;
+
+  // "Checked in" notice: show only from day AFTER check-in, until checkout day
+  const dayAfterCheckIn = new Date(checkInDay);
+  dayAfterCheckIn.setDate(dayAfterCheckIn.getDate() + 1);
+  const isCheckedIn = today >= dayAfterCheckIn && today < checkOutDay;
+
+  // Write review: available from checkout day onward
+  const isAfterCheckOut = today >= checkOutDay;
+  // ─────────────────────────────────────────────────────────────
+
   return (
     <div className="row justify-content-center">
       <div className="col-md-8">
@@ -224,7 +248,7 @@ const BookingDetailPage = () => {
                   Check-in
                 </div>
                 <div style={{ fontWeight: 700, fontSize: "1rem" }}>
-                  {new Date(booking.checkIn).toLocaleDateString("en-IN", {
+                  {checkInDate.toLocaleDateString("en-IN", {
                     weekday: "short",
                     day: "numeric",
                     month: "short",
@@ -233,7 +257,7 @@ const BookingDetailPage = () => {
                 <div
                   style={{ fontSize: "0.8rem", color: "var(--text-secondary)" }}
                 >
-                  {new Date(booking.checkIn).getFullYear()}
+                  {checkInDate.getFullYear()}
                 </div>
               </div>
               <div
@@ -259,7 +283,7 @@ const BookingDetailPage = () => {
                   Check-out
                 </div>
                 <div style={{ fontWeight: 700, fontSize: "1rem" }}>
-                  {new Date(booking.checkOut).toLocaleDateString("en-IN", {
+                  {checkOutDate.toLocaleDateString("en-IN", {
                     weekday: "short",
                     day: "numeric",
                     month: "short",
@@ -268,7 +292,7 @@ const BookingDetailPage = () => {
                 <div
                   style={{ fontSize: "0.8rem", color: "var(--text-secondary)" }}
                 >
-                  {new Date(booking.checkOut).getFullYear()}
+                  {checkOutDate.getFullYear()}
                 </div>
               </div>
             </div>
@@ -454,30 +478,57 @@ const BookingDetailPage = () => {
               </div>
             )}
 
-            {/* Actions */}
-            {booking.status === "Confirmed" && (
+            {/* ── ACTIONS SECTION ── */}
+
+            {/* Check-in day notice — arriving today */}
+            {booking.status === "Confirmed" &&
+              !isBeforeCheckIn &&
+              !isCheckedIn &&
+              !isAfterCheckOut && (
+                <div
+                  style={{
+                    background: "#cce5ff",
+                    border: "1px solid #b8daff",
+                    borderRadius: "var(--radius-sm)",
+                    padding: "0.75rem 1rem",
+                    color: "#004085",
+                    fontSize: "0.875rem",
+                    fontWeight: 600,
+                    marginBottom: "0.75rem",
+                  }}
+                >
+                  🏨 Your check-in is today — we look forward to welcoming you!
+                </div>
+              )}
+
+            {/* Currently checked in notice — day after check-in */}
+            {booking.status === "Confirmed" && isCheckedIn && (
+              <div
+                style={{
+                  background: "#d4edda",
+                  border: "1px solid #c3e6cb",
+                  borderRadius: "var(--radius-sm)",
+                  padding: "0.75rem 1rem",
+                  color: "var(--success)",
+                  fontSize: "0.875rem",
+                  fontWeight: 600,
+                  marginBottom: "0.75rem",
+                }}
+              >
+                ✓ You are currently checked in — enjoy your stay!
+              </div>
+            )}
+
+            {/* Cancel button — only strictly before check-in day */}
+            {booking.status === "Confirmed" && isBeforeCheckIn && (
               <div>
                 {!showCancelConfirm ? (
-                  <div className="d-flex gap-2">
-                    <button
-                      className="btn btn-outline-danger"
-                      onClick={handleShowCancelConfirm}
-                    >
-                      Cancel Booking
-                    </button>
-                    {new Date(booking.checkOut) < new Date() && (
-                      <button
-                        className="btn btn-outline-primary"
-                        onClick={() =>
-                          navigate(`/bookings/${id}/review`, {
-                            state: { booking },
-                          })
-                        }
-                      >
-                        ⭐ Write Review
-                      </button>
-                    )}
-                  </div>
+                  <button
+                    className="btn btn-outline-danger"
+                    onClick={handleShowCancelConfirm}
+                  >
+                    Cancel Booking
+                  </button>
                 ) : (
                   <div
                     style={{
@@ -539,6 +590,20 @@ const BookingDetailPage = () => {
                   </div>
                 )}
               </div>
+            )}
+
+            {/* Write Review — from checkout day onward */}
+            {booking.status === "Confirmed" && isAfterCheckOut && (
+              <button
+                className="btn btn-outline-primary"
+                onClick={() =>
+                  navigate(`/bookings/${id}/review`, {
+                    state: { booking },
+                  })
+                }
+              >
+                ⭐ Write Review
+              </button>
             )}
           </div>
         </div>

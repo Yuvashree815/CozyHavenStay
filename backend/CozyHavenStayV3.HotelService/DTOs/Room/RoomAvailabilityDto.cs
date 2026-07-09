@@ -13,5 +13,6 @@ namespace CozyHavenStayV3.HotelService.DTOs.Room
         public decimal BaseFare { get; set; }
         public bool IsAvailable { get; set; }
         public string? ImageUrl { get; set; }
+        public string? UnavailableReason { get; set; } // "Booking" or "Maintenance" or null
     }
 }

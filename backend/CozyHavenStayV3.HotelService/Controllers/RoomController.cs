@@ -29,7 +29,6 @@ namespace CozyHavenStayV3.HotelService.Controllers
             _fareValidator = fareValidator;
         }
 
-        
         [HttpGet("hotels/{hotelId}/rooms")]
         public async Task<ActionResult<List<RoomDto>>> GetByHotel(int hotelId)
         {
@@ -47,7 +46,6 @@ namespace CozyHavenStayV3.HotelService.Controllers
             return StatusCode(StatusCodes.Status201Created, room);
         }
 
-        
         [HttpGet("rooms/{id}")]
         public async Task<ActionResult<RoomDto>> GetById(int id)
         {
@@ -57,7 +55,7 @@ namespace CozyHavenStayV3.HotelService.Controllers
 
         [HttpGet("hotels/{hotelId}/rooms/availability")]
         public async Task<ActionResult<List<RoomAvailabilityDto>>> GetAvailableRooms(
-    int hotelId, [FromQuery] DateTime checkIn, [FromQuery] DateTime checkOut)
+            int hotelId, [FromQuery] DateTime checkIn, [FromQuery] DateTime checkOut)
         {
             var rooms = await _roomService.GetAvailableRoomsAsync(hotelId, checkIn, checkOut);
             return Ok(rooms);
@@ -82,9 +80,9 @@ namespace CozyHavenStayV3.HotelService.Controllers
             return NoContent();
         }
 
-        
         [HttpPost("rooms/{id}/calculate-fare")]
-        public async Task<ActionResult<FareCalculationResponseDto>> CalculateFare(int id, [FromBody] FareCalculationRequestDto request)
+        public async Task<ActionResult<FareCalculationResponseDto>> CalculateFare(
+            int id, [FromBody] FareCalculationRequestDto request)
         {
             await _fareValidator.ValidateAndThrowAsync(request);
             var result = await _roomService.CalculateFareAsync(id, request);
@@ -93,11 +91,11 @@ namespace CozyHavenStayV3.HotelService.Controllers
 
         private int GetCurrentUserId()
         {
-            var sub = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub");
+            var sub = User.FindFirstValue(ClaimTypes.NameIdentifier)
+                      ?? User.FindFirstValue("sub");
             if (sub is null || !int.TryParse(sub, out var userId))
-            {
-                throw new UnauthorizedAccessException("Invalid or missing user identity in token.");
-            }
+                throw new UnauthorizedAccessException(
+                    "Invalid or missing user identity in token.");
             return userId;
         }
     }

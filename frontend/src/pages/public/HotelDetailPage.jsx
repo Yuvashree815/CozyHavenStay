@@ -25,6 +25,7 @@ const HotelDetailPage = () => {
   const [checkOut, setCheckOut] = useState(tomorrow);
   const [checkingAvailability, setCheckingAvailability] = useState(false);
   const [availabilityChecked, setAvailabilityChecked] = useState(false);
+  const [dateError, setDateError] = useState("");
 
   useEffect(() => {
     fetchHotelDetails();
@@ -48,14 +49,32 @@ const HotelDetailPage = () => {
     }
   };
 
+  const validateDates = () => {
+    const ci = new Date(checkIn);
+    const co = new Date(checkOut);
+    const todayDate = new Date();
+    todayDate.setHours(0, 0, 0, 0);
+
+    if (ci < todayDate) return "Check-in date cannot be in the past.";
+    if (co <= ci) return "Check-out date must be after check-in date.";
+    return "";
+  };
+
   const handleCheckAvailability = async () => {
+    setDateError("");
+    const validationError = validateDates();
+    if (validationError) {
+      setDateError(validationError);
+      return;
+    }
+
     setCheckingAvailability(true);
     try {
       const response = await getAvailableRoomsApi(id, checkIn, checkOut);
       setRooms(response.data);
       setAvailabilityChecked(true);
     } catch {
-      setError("Failed to check availability. Please try again.");
+      setDateError("Failed to check availability. Please try again.");
     } finally {
       setCheckingAvailability(false);
     }
@@ -139,7 +158,7 @@ const HotelDetailPage = () => {
         ← Back to Results
       </button>
 
-      {/* Hero banner — shows real image if available */}
+      {/* Hero banner */}
       <div
         style={{
           borderRadius: "var(--radius-lg)",
@@ -151,7 +170,6 @@ const HotelDetailPage = () => {
             "linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%)",
         }}
       >
-        {/* Real hotel image */}
         {hotel.imageUrl && (
           <img
             src={hotel.imageUrl}
@@ -171,7 +189,6 @@ const HotelDetailPage = () => {
           />
         )}
 
-        {/* Dark overlay for text readability */}
         <div
           style={{
             position: "absolute",
@@ -183,7 +200,6 @@ const HotelDetailPage = () => {
           }}
         />
 
-        {/* Decorative circle — only when no image */}
         {!hotel.imageUrl && (
           <div
             style={{
@@ -199,7 +215,6 @@ const HotelDetailPage = () => {
           />
         )}
 
-        {/* Content overlay */}
         <div
           style={{
             position: "absolute",
@@ -259,7 +274,6 @@ const HotelDetailPage = () => {
               )}
             </div>
 
-            {/* Premium badge — only when no image */}
             {!hotel.imageUrl && (
               <div
                 style={{
@@ -372,7 +386,6 @@ const HotelDetailPage = () => {
                     <div
                       className={`room-card ${room.isAvailable ? "available" : "unavailable"}`}
                     >
-                      {/* Room image if available */}
                       {room.imageUrl && (
                         <div style={{ height: 140, overflow: "hidden" }}>
                           <img
@@ -407,22 +420,38 @@ const HotelDetailPage = () => {
                             {room.roomSize} · Max {room.maxOccupancy} guests
                           </span>
                         </div>
+
+                        {/* ── Availability badge ── */}
                         <span
                           style={{
                             background: room.isAvailable
                               ? "#d4edda"
-                              : "#f8d7da",
+                              : room.unavailableReason === "Maintenance"
+                                ? "#fff3cd"
+                                : "#f8d7da",
                             color: room.isAvailable
                               ? "var(--success)"
-                              : "var(--danger)",
+                              : room.unavailableReason === "Maintenance"
+                                ? "#856404"
+                                : "var(--danger)",
                             fontSize: "0.75rem",
                             padding: "0.25rem 0.6rem",
                             borderRadius: "20px",
                             fontWeight: 600,
-                            border: `1px solid ${room.isAvailable ? "#c3e6cb" : "#f5c6cb"}`,
+                            border: `1px solid ${
+                              room.isAvailable
+                                ? "#c3e6cb"
+                                : room.unavailableReason === "Maintenance"
+                                  ? "#ffeeba"
+                                  : "#f5c6cb"
+                            }`,
                           }}
                         >
-                          {room.isAvailable ? "✓ Available" : "✗ Booked"}
+                          {room.isAvailable
+                            ? "✓ Available"
+                            : room.unavailableReason === "Maintenance"
+                              ? "🔧 Under Maintenance"
+                              : "✗ Booked"}
                         </span>
                       </div>
 
@@ -445,22 +474,30 @@ const HotelDetailPage = () => {
                               per night + taxes
                             </div>
                           </div>
-                          {room.isAvailable && (
-                            <button
-                              className="btn btn-primary"
-                              onClick={() => {
-                                if (!isAuthenticated) {
-                                  navigate("/login");
-                                  return;
-                                }
-                                navigate(`/book/${room.id}`, {
-                                  state: { room, hotel, checkIn, checkOut },
-                                });
-                              }}
-                            >
-                              Book Now
-                            </button>
-                          )}
+
+                          {/* ── Book Now — hidden for maintenance ── */}
+                          {room.isAvailable &&
+                            room.unavailableReason !== "Maintenance" && (
+                              <button
+                                className="btn btn-primary"
+                                onClick={() => {
+                                  if (!isAuthenticated) {
+                                    navigate("/login");
+                                    return;
+                                  }
+                                  const validationError = validateDates();
+                                  if (validationError) {
+                                    setDateError(validationError);
+                                    return;
+                                  }
+                                  navigate(`/book/${room.id}`, {
+                                    state: { room, hotel, checkIn, checkOut },
+                                  });
+                                }}
+                              >
+                                Book Now
+                              </button>
+                            )}
                         </div>
                       </div>
                     </div>
@@ -600,7 +637,11 @@ const HotelDetailPage = () => {
                     className="form-control"
                     value={checkIn}
                     min={today}
-                    onChange={(e) => setCheckIn(e.target.value)}
+                    onChange={(e) => {
+                      setCheckIn(e.target.value);
+                      setDateError("");
+                      setAvailabilityChecked(false);
+                    }}
                   />
                 </div>
                 <div className="mb-3">
@@ -610,7 +651,11 @@ const HotelDetailPage = () => {
                     className="form-control"
                     value={checkOut}
                     min={checkIn}
-                    onChange={(e) => setCheckOut(e.target.value)}
+                    onChange={(e) => {
+                      setCheckOut(e.target.value);
+                      setDateError("");
+                      setAvailabilityChecked(false);
+                    }}
                   />
                 </div>
 
@@ -634,6 +679,23 @@ const HotelDetailPage = () => {
                     >
                       {nights} night{nights > 1 ? "s" : ""}
                     </span>
+                  </div>
+                )}
+
+                {dateError && (
+                  <div
+                    style={{
+                      background: "#f8d7da",
+                      border: "1px solid #f5c6cb",
+                      borderRadius: "var(--radius-sm)",
+                      padding: "0.6rem 0.75rem",
+                      marginBottom: "0.75rem",
+                      color: "var(--danger)",
+                      fontSize: "0.82rem",
+                      fontWeight: 500,
+                    }}
+                  >
+                    ⚠️ {dateError}
                   </div>
                 )}
 

@@ -9,5 +9,7 @@ namespace CozyHavenStayV3.HotelService.Repositories.Interfaces
         Task<RoomBlock?> GetByBookingReferenceIdAsync(int bookingReferenceId);
         Task AddAsync(RoomBlock block);
         Task RemoveAsync(RoomBlock block);
+        Task<RoomBlock?> GetByIdAsync(int blockId);
+        Task<string?> GetOverlappingBlockSourceAsync(int roomId, DateTime checkIn, DateTime checkOut);
     }
 }

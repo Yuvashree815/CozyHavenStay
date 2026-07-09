@@ -22,7 +22,9 @@ const BookingPage = () => {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (!room || !hotel || !checkIn || !checkOut) navigate("/");
+    if (!room || !hotel || !checkIn || !checkOut) {
+      navigate("/");
+    }
   }, []);
 
   useEffect(() => {
@@ -34,6 +36,19 @@ const BookingPage = () => {
     );
   }, [numberOfAdults, numberOfChildren]);
 
+  // Validate check-in and check-out dates
+  const dateError = (() => {
+    if (!checkIn || !checkOut) return null;
+    const ci = new Date(checkIn);
+    const co = new Date(checkOut);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    if (ci < today) return "Check-in date cannot be in the past.";
+    if (co <= ci) return "Check-out date must be after check-in date.";
+    return null;
+  })();
+
   const handleAgeChange = (index, value) => {
     const updated = [...guestAges];
     updated[index] = value;
@@ -41,6 +56,10 @@ const BookingPage = () => {
   };
 
   const handleCalculateFare = async () => {
+    if (dateError) {
+      setFareError(dateError);
+      return;
+    }
     const ages = guestAges.map(Number);
     if (ages.some(isNaN) || ages.some((a) => a < 0)) {
       setFareError("Please enter valid ages for all guests.");
@@ -65,6 +84,10 @@ const BookingPage = () => {
   };
 
   const handleBooking = async () => {
+    if (dateError) {
+      setError(dateError);
+      return;
+    }
     if (!fare) {
       setError("Please calculate the fare first.");
       return;
@@ -127,6 +150,24 @@ const BookingPage = () => {
             </h5>
           </div>
           <div className="cozy-form-body">
+            {/* Date error — shown inline at top */}
+            {dateError && (
+              <div
+                style={{
+                  background: "#f8d7da",
+                  border: "1px solid #f5c6cb",
+                  borderRadius: "var(--radius-sm)",
+                  padding: "0.75rem 1rem",
+                  marginBottom: "1rem",
+                  color: "var(--danger)",
+                  fontSize: "0.9rem",
+                }}
+              >
+                ⚠️ {dateError}
+              </div>
+            )}
+
+            {/* General error */}
             {error && (
               <div
                 style={{
@@ -208,7 +249,7 @@ const BookingPage = () => {
               </select>
             </div>
 
-            {/* Calculate fare */}
+            {/* Fare error */}
             {fareError && (
               <div
                 style={{
@@ -228,7 +269,7 @@ const BookingPage = () => {
             <button
               className="btn btn-outline-primary w-100 mb-3"
               onClick={handleCalculateFare}
-              disabled={fareLoading}
+              disabled={fareLoading || !!dateError}
             >
               {fareLoading ? "Calculating..." : "🧮 Calculate Fare"}
             </button>
@@ -329,7 +370,12 @@ const BookingPage = () => {
             <button
               className="btn btn-primary w-100"
               onClick={handleBooking}
-              disabled={bookingLoading || !fare || fare.exceedsMaxOccupancy}
+              disabled={
+                bookingLoading ||
+                !fare ||
+                fare.exceedsMaxOccupancy ||
+                !!dateError
+              }
               style={{ padding: "0.85rem", fontSize: "1rem" }}
             >
               {bookingLoading ? "Confirming..." : "✅ Confirm Booking"}
@@ -421,7 +467,10 @@ const BookingPage = () => {
                 },
                 {
                   label: "Duration",
-                  value: `${nights} night${nights > 1 ? "s" : ""}`,
+                  value:
+                    nights > 0
+                      ? `${nights} night${nights > 1 ? "s" : ""}`
+                      : "⚠️ Invalid dates",
                 },
               ].map(({ label, value }) => (
                 <div
@@ -436,7 +485,17 @@ const BookingPage = () => {
                   <span style={{ color: "var(--text-secondary)" }}>
                     {label}
                   </span>
-                  <span style={{ fontWeight: 600 }}>{value}</span>
+                  <span
+                    style={{
+                      fontWeight: 600,
+                      color:
+                        label === "Duration" && nights <= 0
+                          ? "var(--danger)"
+                          : "inherit",
+                    }}
+                  >
+                    {value}
+                  </span>
                 </div>
               ))}
 

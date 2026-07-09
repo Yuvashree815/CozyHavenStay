@@ -100,5 +100,28 @@ namespace CozyHavenStayV3.HotelService.Services.Implementations
             await _roomBlockRepository.AddAsync(block);
             Log.Info($"Room {roomId} blocked for maintenance by owner {ownerId}: {checkIn:yyyy-MM-dd} to {checkOut:yyyy-MM-dd}.");
         }
+
+        public async Task UnblockMaintenanceAsync(int blockId, int ownerId)
+        {
+            var block = await _roomBlockRepository.GetByIdAsync(blockId)
+                ?? throw new KeyNotFoundException("Block not found.");
+
+            if (block.Source != BlockSource.Maintenance)
+                throw new InvalidOperationException("Only maintenance blocks can be removed by owners.");
+
+            var room = await _roomRepository.GetByIdAsync(block.RoomId)
+                ?? throw new KeyNotFoundException("Room not found.");
+
+            if (room.Hotel.OwnerId != ownerId)
+                throw new UnauthorizedAccessException("You do not have permission to manage this room.");
+
+            await _roomBlockRepository.RemoveAsync(block);
+            Log.Info($"Maintenance block {blockId} removed by owner {ownerId}.");
+        }
+
+        public async Task<List<RoomBlock>> GetBlocksByRoomIdAsync(int roomId)
+        {
+            return await _roomBlockRepository.GetByRoomIdAsync(roomId);
+        }
     }
 }

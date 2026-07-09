@@ -203,7 +203,8 @@ namespace CozyHavenStayV3.HotelService.Services.Implementations
 
             foreach (var room in rooms)
             {
-                var hasOverlap = await _roomBlockRepository.HasOverlappingBlockAsync(room.Id, checkIn, checkOut);
+                var blockSource = await _roomBlockRepository.GetOverlappingBlockSourceAsync(
+                    room.Id, checkIn, checkOut);
 
                 result.Add(new RoomAvailabilityDto
                 {
@@ -214,7 +215,8 @@ namespace CozyHavenStayV3.HotelService.Services.Implementations
                     MaxOccupancy = room.MaxOccupancy,
                     IsAC = room.IsAC,
                     BaseFare = room.BaseFare,
-                    IsAvailable = !hasOverlap,
+                    IsAvailable = blockSource == null,
+                    UnavailableReason = blockSource,
                     ImageUrl = room.ImageUrl
                 });
             }

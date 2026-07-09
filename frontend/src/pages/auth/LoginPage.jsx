@@ -1,27 +1,48 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { loginApi } from "../../api/authApi";
 
 const LoginPage = () => {
-  const [formData, setFormData] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
+  // Use refs instead of state — always have the latest value instantly
+  const emailRef = useRef(null);
+  const passwordRef = useRef(null);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     e.stopPropagation();
+
+    const email = emailRef.current.value.trim();
+    const password = passwordRef.current.value.trim();
+
+    // Manual validation
+    if (!email) {
+      setError("Please enter your email address.");
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setError("Please enter a valid email address.");
+      return;
+    }
+
+    if (!password) {
+      setError("Please enter your password.");
+      return;
+    }
+
     setError("");
     setLoading(true);
+
     try {
-      const response = await loginApi(formData);
-      const { token, userId, fullName, email, role } = response.data;
+      const response = await loginApi({ email, password });
+      const { token, userId, fullName, role } = response.data;
       login(token, { userId, fullName, email, role });
       if (role === "Admin") navigate("/admin/dashboard");
       else if (role === "HotelOwner") navigate("/owner/dashboard");
@@ -30,7 +51,6 @@ const LoginPage = () => {
       setError(err.response?.data?.message || "Invalid email or password.");
       setLoading(false);
     }
-    // No finally — finally was causing a re-render that wiped the error
   };
 
   return (
@@ -84,23 +104,25 @@ const LoginPage = () => {
               </div>
             )}
 
-            <form onSubmit={handleSubmit}>
+            <form onSubmit={handleSubmit} noValidate>
               {/* Email */}
               <div className="mb-3">
                 <label className="form-label">Email Address</label>
                 <input
+                  ref={emailRef}
                   type="email"
                   className="form-control"
                   name="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  required
                   placeholder="you@example.com"
                   style={{ padding: "0.7rem 1rem" }}
+                  autoComplete="email"
+                  onChange={() => {
+                    if (error) setError("");
+                  }}
                 />
               </div>
 
-              {/* Password with forgot link */}
+              {/* Password */}
               <div className="mb-4">
                 <div className="d-flex justify-content-between align-items-center mb-1">
                   <label className="form-label mb-0">Password</label>
@@ -117,14 +139,16 @@ const LoginPage = () => {
                   </Link>
                 </div>
                 <input
+                  ref={passwordRef}
                   type="password"
                   className="form-control"
                   name="password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  required
                   placeholder="Enter your password"
                   style={{ padding: "0.7rem 1rem" }}
+                  autoComplete="current-password"
+                  onChange={() => {
+                    if (error) setError("");
+                  }}
                 />
               </div>
 
