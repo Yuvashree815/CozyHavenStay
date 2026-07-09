@@ -83,7 +83,6 @@ pipeline {
                         }
                     }
 
-                    // Frontend push — best effort, don't fail pipeline
                     try {
                         retry(3) {
                             bat "docker push %DOCKERHUB_USERNAME%/cozyhaven-frontend:latest"
@@ -94,11 +93,39 @@ pipeline {
                 }
             }
         }
+
+        stage('Deploy Containers') {
+            steps {
+                echo '🚀 Deploying all services as Docker containers...'
+                bat '''
+                    docker network create cozyhaven-net 2>nul || echo Network already exists
+
+                    docker stop cozyhaven-identity cozyhaven-hotel cozyhaven-booking cozyhaven-review cozyhaven-gateway cozyhaven-frontend 2>nul || echo Some containers were not running
+
+                    docker rm cozyhaven-identity cozyhaven-hotel cozyhaven-booking cozyhaven-review cozyhaven-gateway cozyhaven-frontend 2>nul || echo Some containers did not exist
+
+                    docker run -d --name cozyhaven-identity --network cozyhaven-net -p 7101:7101 %DOCKERHUB_USERNAME%/cozyhaven-identity:latest
+
+                    docker run -d --name cozyhaven-hotel --network cozyhaven-net -p 7102:7102 %DOCKERHUB_USERNAME%/cozyhaven-hotel:latest
+
+                    docker run -d --name cozyhaven-booking --network cozyhaven-net -p 7103:7103 %DOCKERHUB_USERNAME%/cozyhaven-booking:latest
+
+                    docker run -d --name cozyhaven-review --network cozyhaven-net -p 7104:7104 %DOCKERHUB_USERNAME%/cozyhaven-review:latest
+
+                    docker run -d --name cozyhaven-gateway --network cozyhaven-net -p 7100:7100 %DOCKERHUB_USERNAME%/cozyhaven-gateway:latest
+
+                    docker run -d --name cozyhaven-frontend --network cozyhaven-net -p 80:80 %DOCKERHUB_USERNAME%/cozyhaven-frontend:latest
+                '''
+                echo '✅ All containers deployed!'
+                echo '🌐 Frontend available at: http://localhost:80'
+                echo '🔗 Gateway available at: http://localhost:7100'
+            }
+        }
     }
 
     post {
         success {
-            echo '✅ Pipeline completed! All 70 tests passed and images pushed to Docker Hub.'
+            echo '✅ Pipeline completed! All 70 tests passed, images pushed and containers running.'
         }
         failure {
             echo '❌ Pipeline failed! Check the logs above for details.'
